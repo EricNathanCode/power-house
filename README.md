@@ -39,6 +39,8 @@ power-house/
 | Part | Open this | Code |
 |---|---|---|
 | 🛒 Store (customer) | http://localhost:5500/store-web/index.html | [store-web/index.html](store-web/index.html) |
+| 🔑 Customer log in | http://localhost:5500/store-web/login.html | [store-web/login.html](store-web/login.html) |
+| 🔑 Customer sign up | http://localhost:5500/store-web/signup.html | [store-web/signup.html](store-web/signup.html) |
 | 💰 Sell to Us | http://localhost:5500/store-web/sell.html | [store-web/sell.html](store-web/sell.html) |
 | 💰 My trade-ins (offer status) | http://localhost:5500/store-web/trade-ins.html | [store-web/trade-ins.html](store-web/trade-ins.html) |
 | 🏭 Staff Portal (log in) | http://localhost:5500/staff-dashboard/login.html | [staff-dashboard/login.html](staff-dashboard/login.html) |

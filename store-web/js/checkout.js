@@ -89,10 +89,9 @@
             <button class="btn p block" data-pay>${ico("check", 18, "#fff")}Pay ${money(total)} (simulated)</button>
             <button class="btn dg block" data-fail style="margin-top:12px">Make the payment fail (test)</button>
             <button class="btn block" data-close style="margin-top:12px">Cancel and go back</button>`, (o, close) => {
-            o.querySelector("[data-pay]").onclick = async (e) => { busy(e.currentTarget, true, "Paying…"); try { const r = await PH.api.simulateGcash(total, "pay"); close(); resolve(r.ref); } catch (err) { close(); reject(err); } };
-            o.querySelector("[data-fail]").onclick = async (e) => { busy(e.currentTarget, true, "Paying…"); try { await PH.api.simulateGcash(total, "fail"); } catch (err) { close(); reject(err); } };
-            o.addEventListener("click", (e) => { if (e.target === o || e.target.closest("[data-close]")) reject(null); });
-          });
+            o.querySelector("[data-pay]").onclick = async (e) => { busy(e.currentTarget, true, "Paying…"); try { const r = await PH.api.simulateGcash(total, "pay"); resolve(r.ref); close(); } catch (err) { reject(err); close(); } };
+            o.querySelector("[data-fail]").onclick = async (e) => { busy(e.currentTarget, true, "Paying…"); try { await PH.api.simulateGcash(total, "fail"); } catch (err) { reject(err); close(); } };
+            }, () => reject(null));
         });
       }
       busy(btn, true, "Placing your order…");

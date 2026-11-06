@@ -14,6 +14,7 @@
   const types = ["All", ...new Set(list.map((p) => p.type))];
 
   $("#app").innerHTML = `
+    <form class="search only-sm" action="products.html" role="search" style="width:100%;margin-bottom:16px"><label class="sr-only" for="q2">Search</label>${PH.ui.ico("search", 18)}<input id="q2" name="q" type="search" placeholder="Search parts and PCs…" value="${esc(q)}"></form>
     <div class="small muted"><a href="index.html">Home</a> / ${esc(q ? "Search" : title)}</div>
     <div class="row between center wrapflex" style="margin-top:8px;gap:16px">
       <div><h2>${esc(title)}</h2><div class="muted">${esc(sub)}</div></div>

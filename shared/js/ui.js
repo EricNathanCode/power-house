@@ -118,10 +118,11 @@
       document.addEventListener("keydown", key); document.body.appendChild(o); $("[data-ok]", o).focus();
     });
   }
-  function modal(innerHtml, onMount) {
+  function modal(innerHtml, onMount, onClose) {
     const o = document.createElement("div"); o.className = "overlay";
     o.innerHTML = `<div class="card modal" role="dialog" aria-modal="true" style="padding:30px">${innerHtml}</div>`;
-    const close = () => { o.remove(); document.removeEventListener("keydown", key); };
+    let closed = false;
+    const close = () => { if (closed) return; closed = true; o.remove(); document.removeEventListener("keydown", key); if (onClose) onClose(); };
     const key = (e) => { if (e.key === "Escape") close(); };
     o.addEventListener("click", (e) => { if (e.target === o || e.target.closest("[data-close]")) close(); });
     document.addEventListener("keydown", key); document.body.appendChild(o);
@@ -131,26 +132,28 @@
   }
 
   /* type-to-search list (UX rule 3): attach to an input, give it a list of strings */
-  function typeahead(input, getList, onPick) {
+  function typeahead(input, getList, onPick, opts = {}) {
+    const enterPicksFirst = opts.enterPicksFirst !== false;
     const box = document.createElement("div"); box.className = "dd hidden"; box.setAttribute("role", "listbox");
     input.after(box); input.setAttribute("autocomplete", "off"); input.setAttribute("aria-autocomplete", "list");
-    let hl = 0, items = [];
+    let hl = 0, items = [], moved = false;
     const render = () => {
       const t = input.value.trim().toLowerCase();
       items = getList().filter((x) => x.toLowerCase().includes(t)).slice(0, 8);
-      box.innerHTML = items.length ? items.map((x, i) => `<button type="button" role="option" class="${i === hl ? "hl" : ""}">${esc(x)}</button>`).join("") + `<div class="empty">Type to search, or scroll the list</div>` : `<div class="empty">No match. Check the spelling.</div>`;
+      box.innerHTML = items.length ? items.map((x, i) => `<button type="button" role="option" class="${i === hl && (moved || enterPicksFirst) ? "hl" : ""}">${esc(x)}</button>`).join("") + `<div class="empty">Type to search, or scroll the list</div>` : `<div class="empty">No match. Check the spelling.</div>`;
       $$("button", box).forEach((b, i) => b.addEventListener("mousedown", (e) => { e.preventDefault(); pick(i); }));
       box.classList.remove("hidden");
     };
     const pick = (i) => { if (!items[i]) return; input.value = items[i]; box.classList.add("hidden"); onPick && onPick(items[i]); input.dispatchEvent(new Event("change")); };
-    input.addEventListener("focus", () => { hl = 0; render(); });
-    input.addEventListener("input", () => { hl = 0; render(); });
+    input.addEventListener("focus", () => { hl = 0; moved = false; render(); });
+    input.addEventListener("input", () => { hl = 0; moved = false; render(); });
     input.addEventListener("blur", () => setTimeout(() => box.classList.add("hidden"), 120));
     input.addEventListener("keydown", (e) => {
       if (box.classList.contains("hidden")) return;
-      if (e.key === "ArrowDown") { hl = Math.min(hl + 1, items.length - 1); render(); e.preventDefault(); }
-      if (e.key === "ArrowUp") { hl = Math.max(hl - 1, 0); render(); e.preventDefault(); }
-      if (e.key === "Enter" && items.length) { pick(hl); e.preventDefault(); }
+      if (e.key === "ArrowDown") { hl = moved ? Math.min(hl + 1, items.length - 1) : 0; moved = true; render(); e.preventDefault(); }
+      if (e.key === "ArrowUp") { hl = Math.max(hl - 1, 0); moved = true; render(); e.preventDefault(); }
+      if (e.key === "Enter" && items.length && (moved || enterPicksFirst)) { pick(hl); e.preventDefault(); }
+      else if (e.key === "Enter") box.classList.add("hidden");
       if (e.key === "Escape") box.classList.add("hidden");
     });
   }
@@ -198,7 +201,7 @@
     const q = $("#q");
     if (q) {
       const names = (await PH.api.listProducts()).map((p) => p.name);
-      typeahead(q, () => names, (v) => { location.href = "products.html?q=" + encodeURIComponent(v); });
+      typeahead(q, () => names, (v) => { location.href = "products.html?q=" + encodeURIComponent(v); }, { enterPicksFirst: false });
       q.value = qs("q") || "";
     }
     return me;

@@ -15,8 +15,7 @@
   $("#app").innerHTML = `
     <div class="small muted"><a href="index.html">Home</a> / <a href="products.html?category=${p.category}">${catName}</a> / ${esc(p.type)}</div>
     <div class="row start stack-md" style="margin-top:18px;gap:36px">
-      <div class="grow"><div class="art" style="height:380px">${art(p.art, p.name)}</div>
-        <div class="row keep" style="gap:16px;margin-top:18px">${[1, 2, 3].map(() => `<div class="art" style="height:90px;flex:1">${art(p.art, p.name)}</div>`).join("")}</div></div>
+      <div class="grow"><div class="art" style="height:clamp(220px,32vw,400px)">${art(p.art, p.name)}</div><p class="small muted">Drawing for the demo. Sample product, not a real brand.</p></div>
       <div style="width:min(520px,100%)">
         <div>${stockBadge(p)} ${p.stock > 0 ? `<span class="small muted" style="margin-left:6px">${p.stock} available</span>` : ""}</div>
         <h1 style="font-size:40px;margin-top:12px">${esc(p.name)}</h1>

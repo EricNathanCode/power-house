@@ -18,8 +18,8 @@
       <h1>Power up<br>your build.</h1>
       <p style="font-size:19px;max-width:520px;margin:16px 0 22px">PC parts, accessories and prebuilt desktops, with stock counted live in our warehouse and every order tracked from packing to your door.</p>
       <div class="row keep wrapflex" style="gap:16px"><a class="btn p" href="products.html?category=part">Shop PC parts</a><a class="btn" href="sell.html">Sell your parts</a></div>
-      <div class="g3" style="margin-top:26px;gap:16px">${cats.map(([c, label, img, unit]) => `
-        <a href="products.html?category=${c}" style="color:var(--ink)"><div class="photo" style="height:110px;background-image:url('${img}')" role="img" aria-label="${label} photo"></div>
+      <div class="cats" style="margin-top:26px">${cats.map(([c, label, img, unit]) => `
+        <a href="products.html?category=${c}" style="color:var(--ink)"><div class="photo cat-photo" style="background-image:url('${img}')" role="img" aria-label="${label} photo"></div>
         <b style="display:block;margin-top:8px;font:700 19px var(--font-head)">${label}</b><span class="small muted">${count(c)} ${unit}</span></a>`).join("")}</div>
     </div>
     ${pc ? `<aside class="card" style="width:min(520px,100%);padding:26px">

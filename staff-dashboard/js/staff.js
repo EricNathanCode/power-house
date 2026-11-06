@@ -10,10 +10,10 @@
   const REASON = { sale: "Sale", cancel: "Cancel", supplier: "Supplier", tradeIn: "Trade-in", restock: "Restock" };
   const st = { orderFilter: "Open", orderQ: "", invCat: "All", invQ: "", logReason: "all" };
 
-  document.body.insertAdjacentHTML("afterbegin", `<header class="nav"><a class="logo" href="index.html"><span class="mark">PH</span>POWER HOUSE <span class="staff-tag">Staff Portal</span></a>
-    <div class="nav-right">${badge("gray", "Warehouse Staff")}<b class="hide-sm">${esc(staff)}</b>
+  document.body.insertAdjacentHTML("afterbegin", `<header class="nav"><a class="logo" href="index.html"><span class="mark">PH</span><span class="hide-xs">POWER HOUSE</span> <span class="staff-tag">Staff</span></a>
+    <div class="nav-right"><span class="hide-sm">${badge("gray", "Warehouse Staff")}</span><b class="hide-sm">${esc(staff)}</b>
       <button class="btn xs icon" id="theme" aria-label="Switch dark mode">${ico("moon", 16)}</button>
-      <a href="../store-web/index.html" class="hide-sm small">View store</a><button class="btn xs" id="logout">${ico("logout", 16)}Log out</button></div></header>`);
+      <a href="../store-web/index.html" class="hide-sm small">View store</a><button class="btn xs" id="logout" aria-label="Log out">${ico("logout", 16)}<span class="hide-xs">Log out</span></button></div></header>`);
   $("#theme").onclick = () => theme.set(theme.get() === "dark" ? "light" : "dark");
   $("#logout").onclick = () => { PH.session.staffLogout(); location.href = "login.html"; };
 
@@ -21,13 +21,13 @@
   async function kpis() {
     const [orders, inv, trades] = await Promise.all([PH.api.allOrders(), PH.api.inventory(), PH.api.allTradeIns()]);
     const today = new Date().toDateString();
-    return `<div class="g4" style="margin-top:18px">
+    return `<div class="kpis">
       <div class="card kpi"><div class="muted">New orders today</div><div class="n">${orders.filter((o) => new Date(o.createdAt).toDateString() === today).length}</div></div>
       <div class="card kpi"><div class="muted">To pack</div><div class="n">${orders.filter((o) => ["Placed", "Packing"].includes(o.status)).length}</div></div>
       <div class="card kpi"><div class="muted">Low-stock items</div><div class="n" style="color:var(--low)">▲ ${inv.filter((p) => p.low).length}</div></div>
       <div class="card kpi"><div class="muted">Trade-ins to review</div><div class="n">${trades.filter((t) => t.status === "Under review").length}</div></div></div>`;
   }
-  const page = (title, tab, inner, withKpis = true) => `<h2>${title}</h2>${tabsHtml(tab)}${withKpis ? "<div id='kpis'></div>" : ""}${inner}`;
+  const page = (title, tab, inner, withKpis = false) => `<h2>${title}</h2>${tabsHtml(tab)}${withKpis ? "<div id='kpis'></div>" : ""}${inner}`;
   const stockBar = (p) => {
     const target = p.targetStock || Math.max(p.lowStockLevel * 3, p.stock, 1);
     const pct = Math.min(100, (p.stock / target) * 100), mark = Math.min(100, (p.lowStockLevel / target) * 100);
@@ -67,7 +67,7 @@
         <h2 style="font-size:36px">${h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"}, ${esc(staff)}</h2>${tabsHtml("overview")}
         <div class="row stack-md" style="margin-top:22px;align-items:stretch">
           <section class="card row keep center" style="width:min(560px,100%);gap:24px;flex-wrap:wrap">
-            <div class="grow"><div class="muted">Stock value (retail)</div><div style="font:700 42px var(--font-head)">${money(value)}</div>
+            <div class="grow" style="min-width:230px"><div class="muted">Stock value (retail)</div><div style="font:700 42px var(--font-head)">${money(value)}</div>
               <div class="row keep center" style="gap:10px"><span class="small muted">+${weekIn} units received this week</span></div>
               <div class="g2" style="gap:8px 16px;margin-top:18px">${[["#0249E1", c.ok + " in stock"], ["#D97706", c.low + " low"], ["#B4173A", c.out + " sold out"], ["#80B0EC", c.used + " used"]].map(([col, t]) => `<span class="small row keep center" style="gap:8px"><i style="width:12px;height:12px;border-radius:3px;background:${col};display:inline-block"></i>${t}</span>`).join("")}</div></div>
             ${donut([[c.ok, "#0249E1"], [c.low, "#D97706"], [c.out, "#B4173A"], [c.used, "#80B0EC"]], 170, 22, inv.length, "SKUs")}
@@ -91,15 +91,15 @@
       return page("Orders", "orders", `
         <div class="row between center wrapflex" style="margin-top:20px;gap:14px"><div class="chips">${filters.map((f) => `<button class="chip ${f === st.orderFilter ? "on" : ""}" data-ofilter="${f}">${f} · ${count(f)}</button>`).join("")}</div>
         <div style="width:280px" class="search"><label class="sr-only" for="oq">Search orders</label>${ico("search", 18)}<input id="oq" type="search" placeholder="Order or customer ID" value="${esc(st.orderQ)}"></div></div>
-        <div class="card" style="margin-top:18px;padding:6px 8px"><div class="table-wrap"><table><thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Updated</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
+        <div class="card table-card" style="margin-top:18px"><div class="table-wrap"><table><thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Updated</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
         ${list.map((o) => {
           const i = S.indexOf(o.status), next = i >= 0 ? S[i + 1] : null, last = o.history[o.history.length - 1];
-          return `<tr><td><b>${esc(o.id)}</b></td><td>${esc(o.customerId)}</td><td class="small">${o.items.map((x) => `${esc(x.name)} ×${x.qty}`).join("<br>")}</td><td>${money(o.total)}</td>
+          return `<tr><td class="nowrap"><b>${esc(o.id)}</b></td><td class="nowrap">${esc(o.customerId)}</td><td class="small">${o.items.map((x) => `${esc(x.name)} ×${x.qty}`).join("<br>")}</td><td>${money(o.total)}</td>
             <td>${o.paymentMethod === "COD" ? "COD" : `GCash <span class="badge sim">SIM</span>`}</td><td>${statusBadge(o.status)}</td><td class="small">${when(last.at)}</td>
             <td><div class="row keep" style="gap:8px;justify-content:flex-end">${next ? `<button class="btn p xs" data-next="${o.id}" data-to="${next}">Mark as ${next}</button>` : ""}${["Placed", "Packing"].includes(o.status) ? `<button class="btn dg xs" data-ocancel="${o.id}">Cancel</button>` : ""}${!next && !["Placed", "Packing"].includes(o.status) ? '<span class="small muted">Closed</span>' : ""}</div></td></tr>`;
         }).join("") || `<tr><td colspan="8" class="muted" style="text-align:center;padding:28px">No orders match.</td></tr>`}
         </tbody></table></div></div>
-        <p class="small muted">Status moves one step at a time: ${S.join(" → ")}. Cancel is only possible before Shipping, and it puts the stock back.</p>`);
+        <p class="small muted">Status moves one step at a time: ${S.join(" → ")}. Cancel is only possible before Shipping, and it puts the stock back.</p>`, true);
     },
 
     async inventory() {
@@ -115,7 +115,7 @@
           <div class="search" style="width:260px"><label class="sr-only" for="iq">Search stock</label>${ico("search", 18)}<input id="iq" type="search" placeholder="Search SKU or name" value="${esc(st.invQ)}"></div>
           <div class="chips">${cats.map((c) => `<button class="chip ${c === st.invCat ? "on" : ""}" data-icat="${c}">${label(c)} · ${n(c)}</button>`).join("")}</div></div>
           <button class="btn p sm" id="newp">${ico("plus", 18, "#fff")}New product</button></div>
-        <div class="card" style="margin-top:18px;padding:6px 8px"><div class="table-wrap"><table><thead><tr><th>Product</th><th>Category</th><th>Stock (bar = target, line = low level)</th><th>Low level</th><th>Price</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
+        <div class="card table-card" style="margin-top:18px"><div class="table-wrap"><table><thead><tr><th>Product</th><th>Category</th><th>Stock (bar = target, line = low level)</th><th>Low level</th><th>Price</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
         ${list.map((p) => `<tr><td><div class="row keep center" style="gap:12px"><div class="art" style="width:64px;height:44px;flex-shrink:0">${art(p.art, p.name)}</div><div><b>${esc(p.name)}</b><div class="small muted">${esc(p.sku)}</div></div></div></td>
           <td>${esc(CAT[p.category] || p.category)}<div class="small muted">${esc(p.type)}</div></td><td>${stockBar(p)}</td><td>${p.lowStockLevel}</td><td>${money(p.price)}</td><td>${invBadge(p)}</td>
           <td><div class="row keep" style="gap:8px;justify-content:flex-end">${p.low ? `<a class="btn p xs" href="#low-stock">Reorder</a>` : ""}<button class="btn xs" data-restock="${esc(p.sku)}">Restock</button><button class="btn xs icon" data-edit="${esc(p.sku)}" aria-label="Edit ${esc(p.name)}">${ico("edit", 16)}</button></div></td></tr>`).join("") || `<tr><td colspan="7" class="muted" style="text-align:center;padding:28px">No products match.</td></tr>`}
@@ -127,8 +127,8 @@
       const [low, set] = await Promise.all([PH.api.lowStock(), PH.api.settings()]);
       return page("Low stock", "low-stock", `
         ${set.supplierOnline ? "" : `<div class="note warn" style="margin-top:18px">${ico("alert", 16)} The supplier is switched off (simulated outage). Reorders will fail until you turn it back on in <a href="#reorders">Reorders</a>.</div>`}
-        <div class="card" style="margin-top:18px;padding:6px 8px"><div class="table-wrap"><table><thead><tr><th>SKU</th><th>Product</th><th>Stock</th><th>Low level</th><th>Target</th><th>Supplier min.</th><th>Order qty</th><th>Est. cost</th><th><span class="sr-only">Action</span></th></tr></thead><tbody>
-        ${low.map((p) => `<tr><td class="small">${esc(p.sku)}</td><td><b>${esc(p.name)}</b></td><td>${badge(p.stock <= 0 ? "out" : "low", String(p.stock))}</td><td>${p.lowStockLevel}</td><td>${p.targetStock}</td>
+        <div class="card table-card" style="margin-top:18px"><div class="table-wrap"><table><thead><tr><th>SKU</th><th>Product</th><th>Stock</th><th>Low level</th><th>Target</th><th>Supplier min.</th><th>Order qty</th><th>Est. cost</th><th><span class="sr-only">Action</span></th></tr></thead><tbody>
+        ${low.map((p) => `<tr><td class="small nowrap">${esc(p.sku)}</td><td><b>${esc(p.name)}</b></td><td>${badge(p.stock <= 0 ? "out" : "low", String(p.stock))}</td><td>${p.lowStockLevel}</td><td>${p.targetStock}</td>
           <td>${p.supplier ? p.supplier.minOrderQty : "—"}</td>
           <td>${p.supplier ? `<label class="sr-only" for="q-${esc(p.sku)}">Order quantity</label><input type="number" id="q-${esc(p.sku)}" min="${p.supplier.minOrderQty}" value="${p.suggestedQty}" style="width:90px;height:40px" data-qty="${esc(p.sku)}" data-unit="${p.supplier.unitPrice}">` : "—"}</td>
           <td data-cost="${esc(p.sku)}">${p.supplier ? money(p.suggestedQty * p.supplier.unitPrice) : "—"}</td>
@@ -142,8 +142,8 @@
       return page("Reorders", "reorders", `
         <div class="note row keep between center wrapflex" style="margin-top:18px;gap:14px"><span>Supplier: <b>${esc(set.supplierName)} (Fictional company: simulated supplier)</b>. Mock API, not a real company.</span>
           <label class="row keep center" style="gap:10px;margin:0;color:var(--ink)">Supplier online <span class="toggle"><input type="checkbox" id="sup" ${set.supplierOnline ? "checked" : ""}><span></span></span></label></div>
-        <div class="card" style="margin-top:18px;padding:6px 8px"><div class="table-wrap"><table><thead><tr><th>PO</th><th>Our SKU</th><th>Supplier SKU</th><th>Qty</th><th>Unit price</th><th>Total</th><th>Status</th><th>Approved</th><th><span class="sr-only">Action</span></th></tr></thead><tbody>
-        ${pos.map((po) => `<tr><td><b>${esc(po.poNumber)}</b></td><td class="small">${esc(po.sku)}<div class="muted">${esc((inv.find((p) => p.sku === po.sku) || {}).name || "")}</div></td><td class="small">${esc(po.supplierSku)}</td><td>${po.qty}</td><td>${money(po.unitPrice)}</td><td>${money(po.qty * po.unitPrice)}</td>
+        <div class="card table-card" style="margin-top:18px"><div class="table-wrap"><table><thead><tr><th>PO</th><th>Our SKU</th><th>Supplier SKU</th><th>Qty</th><th>Unit price</th><th>Total</th><th>Status</th><th>Approved</th><th><span class="sr-only">Action</span></th></tr></thead><tbody>
+        ${pos.map((po) => `<tr><td class="nowrap"><b>${esc(po.poNumber)}</b></td><td class="small nowrap">${esc(po.sku)}<div class="muted">${esc((inv.find((p) => p.sku === po.sku) || {}).name || "")}</div></td><td class="small">${esc(po.supplierSku)}</td><td>${po.qty}</td><td>${money(po.unitPrice)}</td><td>${money(po.qty * po.unitPrice)}</td>
           <td>${statusBadge(po.status)}${po.status === "DELIVERED" ? ` <span class="small muted">+${po.qty} stock</span>` : ""}</td><td class="small">${date(po.createdAt)} · ${esc(po.approvedBy)}</td>
           <td>${po.status === "CONFIRMED" ? `<button class="btn o xs" data-ship="${po.poNumber}">Mark shipped (simulated)</button>` : po.status === "SHIPPED" ? `<button class="btn p xs" data-receive="${po.poNumber}">Simulate delivery</button>` : ""}</td></tr>`).join("") || `<tr><td colspan="9" class="muted" style="text-align:center;padding:28px">No purchase orders yet. Approve one in Low stock.</td></tr>`}
         </tbody></table></div></div>
@@ -153,7 +153,7 @@
     async "trade-ins"() {
       const list = await PH.api.allTradeIns();
       return page("Trade-ins", "trade-ins", `
-        <div class="card" style="margin-top:18px;padding:6px 8px"><div class="table-wrap"><table><thead><tr><th>Trade-in</th><th>Customer</th><th>Item</th><th>Condition</th><th>Asking</th><th>Suggested</th><th>Offer</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
+        <div class="card table-card" style="margin-top:18px"><div class="table-wrap"><table><thead><tr><th>Trade-in</th><th>Customer</th><th>Item</th><th>Condition</th><th>Asking</th><th>Suggested</th><th>Offer</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
         ${list.map((t) => {
           let act = "", offer = t.offer ? money(t.offer) : "—";
           if (t.status === "Under review") { offer = `<label class="sr-only" for="o-${t.id}">Offer</label><input type="number" id="o-${t.id}" value="${t.suggestedOffer || ""}" placeholder="₱" style="width:110px;height:40px">`; act = `<button class="btn p xs" data-offer="${t.id}">Send offer</button><button class="btn dg xs" data-reject="${t.id}">Decline</button>`; }
@@ -162,7 +162,7 @@
           if (t.status === "Received") act = `<label class="sr-only" for="r-${t.id}">Resale price</label><input type="number" id="r-${t.id}" value="${Math.round((t.offer || 0) * 1.3)}" style="width:110px;height:40px" title="Resale price"><button class="btn p xs" data-tostock="${t.id}">Add to stock (used)</button>`;
           if (["Declined", "Rejected", "In stock"].includes(t.status)) act = '<span class="small muted">Closed</span>';
           const pct = PH.api.OFFER_PCT[t.condition];
-          return `<tr><td><b>${esc(t.id)}</b><div class="small muted">${date(t.createdAt)}</div></td><td>${esc(t.customerId)}</td><td><b>${esc(t.brand)} ${esc(t.model)}</b><div class="small muted">${esc(t.type)} · ${t.photos || 0} photo(s)</div></td>
+          return `<tr><td class="nowrap"><b>${esc(t.id)}</b><div class="small muted">${date(t.createdAt)}</div></td><td class="nowrap">${esc(t.customerId)}</td><td><b>${esc(t.brand)} ${esc(t.model)}</b><div class="small muted">${esc(t.type)} · ${t.photos || 0} photo(s)</div></td>
             <td>${esc(t.condition)}</td><td>${money(t.askingPrice)}</td><td>${t.suggestedOffer ? `${money(t.suggestedOffer)} <span class="small muted">(${Math.round(pct * 100)}%)</span>` : '<span class="small muted">price by hand</span>'}</td>
             <td>${offer}</td><td>${statusBadge(t.status)}</td><td><div class="row keep center" style="gap:8px;justify-content:flex-end">${act}</div></td></tr>`;
         }).join("") || `<tr><td colspan="9" class="muted" style="text-align:center;padding:28px">No trade-ins yet.</td></tr>`}

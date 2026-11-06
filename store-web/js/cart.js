@@ -21,7 +21,7 @@
     $("#app").innerHTML = `<h2>Your cart</h2><div class="muted">${PH.cart.count()} item${PH.cart.count() === 1 ? "" : "s"} · stock is checked again when you place the order</div>
       ${over.length ? `<div class="note bad" style="margin-top:16px">${ico("alert", 16)} Stock changed: ${over.map((i) => `${esc(i.name)} has only ${i.stock} left`).join(", ")}. <button class="btn xs" id="fix">Use what's available</button></div>` : ""}
       <div class="row start stack-md" style="margin-top:22px">
-        <div class="card grow" style="padding:8px 8px"><div class="table-wrap"><table>
+        <div class="card table-card grow"><div class="table-wrap"><table>
           <thead><tr><th>Product</th><th>Price</th><th>Quantity</th><th>Subtotal</th><th><span class="sr-only">Remove</span></th></tr></thead><tbody>
           ${q.items.map((i) => `<tr><td><div class="row keep center" style="gap:14px"><a class="art" href="product.html?sku=${encodeURIComponent(i.sku)}" style="width:90px;height:62px;flex-shrink:0">${art(i.art, i.name)}</a><div><b>${esc(i.name)}</b><div class="small muted">${esc(i.sku)} · ${i.stock} in stock</div></div></div></td>
             <td>${money(i.price)}</td>

@@ -13,10 +13,10 @@
   const sms = localStorage.getItem("ph_sms") !== "off";
   const firstArt = (o) => { const p = PH.api.quote([{ sku: o.items[0].sku, qty: 1 }]).items[0]; return p ? p.art : "box"; };
 
-  $("#app").innerHTML = `<div class="row start stack-md" style="gap:32px">
-    <section class="card" style="width:min(500px,100%);padding:32px;text-align:center">
+  $("#app").innerHTML = `${PH.ui.hudHead({ eyebrow: `Account // ${esc(me.id)}`, title: "My account", ghost: "PROFILE" })}<div class="row start stack-md" style="gap:32px">
+    <section class="card hud-frame" style="width:min(500px,100%);padding:32px;text-align:center">
       <div class="avatar" aria-hidden="true">${esc(initials)}</div>
-      <div class="small muted" style="margin-top:18px">${hello}</div><h2 style="margin:2px 0 0">${esc(me.name)}</h2>
+      <div class="small muted" style="margin-top:18px">${hello}</div><h2 class="bracket" style="margin:2px 0 0">${esc(me.name)}</h2>
       <div class="small muted" style="margin-top:6px">${esc(me.id)} · member since ${date(me.since)} · sample account</div>
       <div class="row keep" style="gap:16px;justify-content:center;margin-top:26px;flex-wrap:wrap">
         ${[["orders.html", "box", "My Orders"], ["sell.html", "swap", "Sell to Us"], ["trade-ins.html", "cash", "Trade-ins"]].map(([href, i, t]) => `<a class="qa" href="${href}"><span class="circ lg">${ico(i, 26)}</span>${t}</a>`).join("")}

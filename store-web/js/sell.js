@@ -20,7 +20,7 @@
       { label: "Tell us about the item", sub: "Type, brand, model, condition, photos", state: "cur" }, { label: "Staff review it", sub: "Usually within 1 working day", state: "todo" },
       { label: "Get an offer", sub: "60 / 45 / 30% of our price by condition", state: "todo" }, { label: "Bring it in, get paid", sub: "Cash on handover (sample)", state: "todo" }])}</aside>`;
     if (st.step === 1) return `<aside class="card" style="width:min(420px,100%)"><h3>Good photos get better offers</h3>
-      ${["Use daylight or a bright room", "Show the serial sticker and the ports", "Include the box and cables if you have them"].map((t) => `<div class="row keep" style="gap:12px;margin-top:14px">${ico("check", 20, "#0249E1")}<span class="small">${t}</span></div>`).join("")}
+      ${["Use daylight or a bright room", "Show the serial sticker and the ports", "Include the box and cables if you have them"].map((t) => `<div class="row keep" style="gap:12px;margin-top:14px">${ico("check", 20, "#111111")}<span class="small">${t}</span></div>`).join("")}
       <div class="inset" style="padding:16px;margin-top:20px"><div class="small muted">So far</div><b>${esc(st.brand)} ${esc(st.model)}</b><div class="small muted">${esc(st.type)} · ${esc(st.category)}</div></div></aside>`;
     if (st.step === 2) return `<aside class="card" style="width:min(420px,100%)"><h3>How we price</h3>${conds.map(([c]) => `<div class="leader"><span>${c}</span><span class="fill"></span><span>${PH.api.OFFER_PCT[c] * 100}%</span></div>`).join("")}<p class="small muted">Percent of our current retail price for the same kind of item. Staff can adjust after they inspect it.</p>${o ? `<p class="small muted">Compared with: ${esc(o.refName)} (${money(o.retail)})</p>` : ""}</aside>`;
     return `<aside class="card" style="width:min(420px,100%)"><h3>What happens next</h3>${PH.ui.vsteps([
@@ -46,8 +46,8 @@
       const pct = Math.round(PH.api.OFFER_PCT[st.condition] * 100);
       return `<h3>Step 3 of 4 · Set your price</h3>
         ${o ? `<div class="inset row" style="padding:24px;margin-top:18px;gap:30px;align-items:center"><div class="grow"><div class="small muted">Our suggested offer for ${esc(st.brand)} ${esc(st.model)} (${esc(st.condition)})</div><div style="font:700 52px var(--font-head)">${money(o.offer)}</div>
-          <div class="row keep center wrapflex" style="gap:10px"><span class="small muted">Our retail price ${money(o.retail)}</span><span class="badge ok">${pct}% of retail</span></div></div>${donut([[pct, "#0249E1"], [100 - pct, "transparent"]], 160, 18, pct + "%", "of retail")}</div>
-          <div class="row" style="gap:14px;margin-top:18px">${conds.map(([c]) => { const p = Math.round(PH.api.OFFER_PCT[c] * 100); return `<button type="button" class="${c === st.condition ? "inset" : "card"} row keep center" data-cond="${c}" style="flex:1;padding:12px 16px;border-radius:999px;gap:12px;border:0;cursor:pointer;font-family:inherit;color:inherit;${c === st.condition ? "background:var(--sel-tint)" : ""}">${donut([[p, "#0249E1"], [100 - p, "transparent"]], 44, 6)}<span style="text-align:left"><b class="small">${c} · ${money(Math.round(o.retail * PH.api.OFFER_PCT[c]))}</b><span class="small muted" style="display:block">${p}% of retail</span></span></button>`; }).join("")}</div>`
+          <div class="row keep center wrapflex" style="gap:10px"><span class="small muted">Our retail price ${money(o.retail)}</span><span class="badge ok">${pct}% of retail</span></div></div>${donut([[pct, "#F5C800"], [100 - pct, "transparent"]], 160, 18, pct + "%", "of retail")}</div>
+          <div class="row" style="gap:14px;margin-top:18px">${conds.map(([c]) => { const p = Math.round(PH.api.OFFER_PCT[c] * 100); return `<button type="button" class="${c === st.condition ? "inset" : "card"} row keep center" data-cond="${c}" style="flex:1;padding:12px 16px;border-radius:999px;gap:12px;border:0;cursor:pointer;font-family:inherit;color:inherit;${c === st.condition ? "background:var(--sel-tint)" : ""}">${donut([[p, "#F5C800"], [100 - p, "transparent"]], 44, 6)}<span style="text-align:left"><b class="small">${c} · ${money(Math.round(o.retail * PH.api.OFFER_PCT[c]))}</b><span class="small muted" style="display:block">${p}% of retail</span></span></button>`; }).join("")}</div>`
         : `<div class="note" style="margin-top:18px">We don't sell this kind of item yet, so there's no automatic offer. Staff will price it by hand.</div>`}
         <div class="row" style="margin-top:26px;gap:20px;align-items:flex-end"><div class="grow">${field("ask", "Your asking price", st.askingPrice ? st.askingPrice.toLocaleString("en-PH") : "", 'inputmode="numeric" placeholder="₱ 0.00"')}</div><div class="note grow" id="cmp" style="margin-bottom:24px"></div></div>
         <div class="actions" style="margin-top:8px"><button class="btn" data-back>Back</button><button class="btn p grow" data-next>Continue to review</button></div>`;
@@ -62,7 +62,7 @@
   }
 
   function fileRows() {
-    return st.files.map((f, i) => `<div class="card row keep center" style="padding:12px 16px;margin-top:12px;gap:14px"><div class="inset" style="width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center">${ico("image", 20, "#0249E1")}</div>
+    return st.files.map((f, i) => `<div class="card row keep center" style="padding:12px 16px;margin-top:12px;gap:14px"><div class="inset" style="width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center">${ico("image", 20, "#F5C800")}</div>
       <div class="grow"><b class="small">${esc(f.name)}</b> <span class="small muted">· ${(f.size / 1048576).toFixed(1)} MB · ${f.done ? "added" : "adding…"}</span><div class="pbar" style="margin-top:8px"><i style="width:${f.done ? 100 : f.pct || 5}%"></i></div></div>
       <button type="button" class="btn xs icon" data-rmfile="${i}" aria-label="Remove ${esc(f.name)}">${ico("x", 16)}</button></div>`).join("");
   }
@@ -79,7 +79,7 @@
   }
 
   function draw() {
-    $("#app").innerHTML = `<div class="row between center wrapflex"><div><h2 style="font-size:40px">Sell to Us</h2><div class="muted">Sell your used PC parts, accessories or prebuilt PC to Power House.</div></div><a class="btn sm" href="trade-ins.html">${ico("swap", 18)}My trade-ins</a></div>
+    $("#app").innerHTML = `${PH.ui.hudHead({ eyebrow: `Sell to Us // step ${st.step + 1} of 4`, title: "Sell to Us", ghost: "TRADE", sub: "Sell your used PC parts, accessories or prebuilt PC to Power House.", right: `<a class="btn sm" href="trade-ins.html">${ico("swap", 18)}My trade-ins</a>` })}
       <div class="row start stack-md" style="margin-top:22px"><section class="card grow">${steps(STEPS, st.step)}<div style="margin-top:22px">${body()}</div></section>${side()}</div>`;
     if (st.step === 0) {
       typeahead($("#type"), () => PH.PART_TYPES[$("#category").value] || [], () => {});

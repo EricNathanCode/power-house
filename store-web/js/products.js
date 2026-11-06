@@ -15,11 +15,8 @@
 
   $("#app").innerHTML = `
     <form class="search only-sm" action="products.html" role="search" style="width:100%;margin-bottom:16px"><label class="sr-only" for="q2">Search</label>${PH.ui.ico("search", 18)}<input id="q2" name="q" type="search" placeholder="Search parts and PCs…" value="${esc(q)}"></form>
-    <div class="small muted"><a href="index.html">Home</a> / ${esc(q ? "Search" : title)}</div>
-    <div class="row between center wrapflex" style="margin-top:8px;gap:16px">
-      <div><h2>${esc(title)}</h2><div class="muted">${esc(sub)}</div></div>
-      <div class="inset row keep wrapflex center" style="padding:12px 16px;gap:10px">${badge("ok", n((p) => p.stock > 0 && p.condition === "new") + " in stock")}${badge("low", n((p) => p.lowStockLevel > 0 && p.stock > 0 && p.stock <= p.lowStockLevel) + " low")}${badge("out", n((p) => p.stock <= 0) + " sold out")}${badge("used", n((p) => p.condition === "used") + " used")}</div>
-    </div>
+    ${PH.ui.hudHead({ eyebrow: q ? "Search // results" : "Shop // " + (category || "all"), title, sub: esc(sub), ghost: q ? "SEARCH" : (titles[category] ? title.split(" ")[0] : "SHOP"), crumb: `<a href="index.html">Home</a> / ${esc(q ? "Search" : title)}`,
+      right: `<div class="row keep wrapflex center" style="gap:8px">${badge("ok", n((p) => p.stock > 0 && p.condition === "new") + " in stock")}${badge("low", n((p) => p.lowStockLevel > 0 && p.stock > 0 && p.stock <= p.lowStockLevel) + " low")}${badge("out", n((p) => p.stock <= 0) + " sold out")}${badge("used", n((p) => p.condition === "used") + " used")}</div>` })}
     <div class="row between center wrapflex" style="margin-top:22px;gap:14px">
       <div class="chips" role="group" aria-label="Filter by type" id="types">${types.map((t) => `<button class="chip ${t === "All" ? "on" : ""}" data-type="${esc(t)}">${esc(t)} · ${t === "All" ? list.length : n((p) => p.type === t)}</button>`).join("")}</div>
       <div class="row keep center wrapflex" style="gap:12px">

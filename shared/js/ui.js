@@ -39,7 +39,9 @@
     image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/>',
     trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
     refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/>',
-    chev: '<path d="m9 6 6 6-6 6"/>'
+    chev: '<path d="m9 6 6 6-6 6"/>',
+    power: '<path d="M12 3v8"/><path d="M6.3 7.3a8 8 0 1 0 11.4 0"/>',
+    grid: '<path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/>'
   };
   const ico = (name, size = 20, color = "currentColor") =>
     `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0">${ICONS[name] || ICONS.box}</svg>`;
@@ -49,16 +51,16 @@
   const ART = {
     ram: `<rect x="10" y="40" width="220" height="56" rx="4" fill="#047857"/>${Array.from({ length: 6 }, (_, i) => `<rect x="${22 + i * 34}" y="50" width="24" height="30" rx="2" fill="#111"/>`).join("")}${pins(30, 14, 7, 90, "#D69E2E")}`,
     ram8: `<rect x="10" y="40" width="220" height="56" rx="4" fill="#2B6CB0"/>${Array.from({ length: 4 }, (_, i) => `<rect x="${22 + i * 34}" y="50" width="24" height="30" rx="2" fill="#111"/>`).join("")}${pins(30, 14, 7, 90, "#D69E2E")}`,
-    ssd: `<rect x="20" y="52" width="200" height="38" rx="4" fill="#111"/><rect x="40" y="60" width="60" height="22" rx="2" fill="#4A5568"/><rect x="110" y="60" width="40" height="22" rx="2" fill="#4A5568"/><rect x="160" y="64" width="40" height="14" rx="2" fill="#0249E1"/><circle cx="210" cy="71" r="5" fill="#E0E5EC"/>`,
+    ssd: `<rect x="20" y="52" width="200" height="38" rx="4" fill="#111"/><rect x="40" y="60" width="60" height="22" rx="2" fill="#4A5568"/><rect x="110" y="60" width="40" height="22" rx="2" fill="#4A5568"/><rect x="160" y="64" width="40" height="14" rx="2" fill="#F5C800"/><circle cx="210" cy="71" r="5" fill="#E0E5EC"/>`,
     hdd: `<rect x="50" y="16" width="140" height="110" rx="8" fill="#A0AEC0"/><circle cx="120" cy="66" r="38" fill="#CBD5E0"/><circle cx="120" cy="66" r="8" fill="#4A5568"/><rect x="132" y="80" width="44" height="8" rx="4" fill="#4A5568" transform="rotate(-35 132 80)"/>`,
-    gpu: `<rect x="12" y="30" width="216" height="80" rx="10" fill="#111"/><circle cx="78" cy="70" r="30" fill="#4A5568"/><circle cx="162" cy="70" r="30" fill="#4A5568"/><circle cx="78" cy="70" r="8" fill="#0249E1"/><circle cx="162" cy="70" r="8" fill="#0249E1"/><rect x="40" y="110" width="120" height="8" fill="#D69E2E"/>`,
-    kb: `<rect x="14" y="30" width="212" height="84" rx="10" fill="#111"/>${Array.from({ length: 4 }, (_, r) => Array.from({ length: 10 }, (_, c) => `<rect x="${24 + c * 19}" y="${40 + r * 18}" width="15" height="13" rx="2" fill="${r === 0 && c === 0 ? "#0249E1" : "#4A5568"}"/>`).join("")).join("")}`,
-    pc: `<rect x="80" y="8" width="80" height="124" rx="8" fill="#111"/><rect x="80" y="8" width="8" height="124" fill="#0249E1"/><circle cx="124" cy="52" r="20" fill="#4A5568"/><circle cx="124" cy="52" r="6" fill="#80B0EC"/><circle cx="124" cy="98" r="14" fill="#4A5568"/>`,
+    gpu: `<rect x="12" y="30" width="216" height="80" rx="10" fill="#111"/><circle cx="78" cy="70" r="30" fill="#4A5568"/><circle cx="162" cy="70" r="30" fill="#4A5568"/><circle cx="78" cy="70" r="8" fill="#F5C800"/><circle cx="162" cy="70" r="8" fill="#F5C800"/><rect x="40" y="110" width="120" height="8" fill="#D69E2E"/>`,
+    kb: `<rect x="14" y="30" width="212" height="84" rx="10" fill="#111"/>${Array.from({ length: 4 }, (_, r) => Array.from({ length: 10 }, (_, c) => `<rect x="${24 + c * 19}" y="${40 + r * 18}" width="15" height="13" rx="2" fill="${r === 0 && c === 0 ? "#F5C800" : "#4A5568"}"/>`).join("")).join("")}`,
+    pc: `<rect x="80" y="8" width="80" height="124" rx="8" fill="#111"/><rect x="80" y="8" width="8" height="124" fill="#F5C800"/><circle cx="124" cy="52" r="20" fill="#4A5568"/><circle cx="124" cy="52" r="6" fill="#9CA3AF"/><circle cx="124" cy="98" r="14" fill="#4A5568"/>`,
     cpu: `<rect x="70" y="20" width="100" height="100" rx="8" fill="#A0AEC0"/><rect x="86" y="36" width="68" height="68" rx="4" fill="#CBD5E0"/><text x="120" y="76" font-size="16" font-family="Arial" font-weight="700" text-anchor="middle" fill="#4A5568">CPU</text>${pins(9, 76, 10, 10, "#D69E2E")}${pins(9, 76, 10, 120, "#D69E2E")}`,
-    mb: `<rect x="30" y="10" width="180" height="120" rx="6" fill="#1F3A2E"/><rect x="50" y="26" width="46" height="46" rx="4" fill="#A0AEC0"/><rect x="112" y="24" width="8" height="60" fill="#111"/><rect x="126" y="24" width="8" height="60" fill="#111"/><rect x="50" y="92" width="130" height="10" rx="2" fill="#111"/><rect x="50" y="110" width="90" height="8" rx="2" fill="#4A5568"/><circle cx="180" cy="40" r="10" fill="#0249E1"/>`,
-    psu: `<rect x="40" y="24" width="160" height="96" rx="8" fill="#111"/><circle cx="110" cy="72" r="36" fill="#4A5568"/><path d="M80 72h60M110 42v60M89 51l42 42M131 51 89 93" stroke="#111" stroke-width="4"/><rect x="168" y="40" width="20" height="14" rx="2" fill="#0249E1"/>`,
-    mouse: `<rect x="86" y="14" width="68" height="112" rx="34" fill="#111"/><path d="M120 14v40" stroke="#4A5568" stroke-width="4"/><rect x="115" y="28" width="10" height="18" rx="5" fill="#0249E1"/>`,
-    headset: `<path d="M60 90V70a60 60 0 0 1 120 0v20" fill="none" stroke="#111" stroke-width="12"/><rect x="44" y="80" width="34" height="50" rx="12" fill="#111"/><rect x="162" y="80" width="34" height="50" rx="12" fill="#111"/><rect x="52" y="92" width="18" height="26" rx="6" fill="#0249E1"/>`,
+    mb: `<rect x="30" y="10" width="180" height="120" rx="6" fill="#1F3A2E"/><rect x="50" y="26" width="46" height="46" rx="4" fill="#A0AEC0"/><rect x="112" y="24" width="8" height="60" fill="#111"/><rect x="126" y="24" width="8" height="60" fill="#111"/><rect x="50" y="92" width="130" height="10" rx="2" fill="#111"/><rect x="50" y="110" width="90" height="8" rx="2" fill="#4A5568"/><circle cx="180" cy="40" r="10" fill="#F5C800"/>`,
+    psu: `<rect x="40" y="24" width="160" height="96" rx="8" fill="#111"/><circle cx="110" cy="72" r="36" fill="#4A5568"/><path d="M80 72h60M110 42v60M89 51l42 42M131 51 89 93" stroke="#111" stroke-width="4"/><rect x="168" y="40" width="20" height="14" rx="2" fill="#F5C800"/>`,
+    mouse: `<rect x="86" y="14" width="68" height="112" rx="34" fill="#111"/><path d="M120 14v40" stroke="#4A5568" stroke-width="4"/><rect x="115" y="28" width="10" height="18" rx="5" fill="#F5C800"/>`,
+    headset: `<path d="M60 90V70a60 60 0 0 1 120 0v20" fill="none" stroke="#111" stroke-width="12"/><rect x="44" y="80" width="34" height="50" rx="12" fill="#111"/><rect x="162" y="80" width="34" height="50" rx="12" fill="#111"/><rect x="52" y="92" width="18" height="26" rx="6" fill="#F5C800"/>`,
     monitor: `<rect x="30" y="10" width="180" height="100" rx="8" fill="#111"/><rect x="40" y="20" width="160" height="80" rx="4" fill="#2B6CB0"/><rect x="110" y="110" width="20" height="16" fill="#4A5568"/><rect x="80" y="124" width="80" height="8" rx="4" fill="#4A5568"/>`,
     box: `<path d="M60 40l60-24 60 24v64l-60 24-60-24z" fill="#A0AEC0"/><path d="M60 40l60 24 60-24M120 64v64" stroke="#4A5568" stroke-width="4" fill="none"/>`
   };
@@ -112,9 +114,9 @@
     return new Promise((resolve) => {
       const o = document.createElement("div"); o.className = "overlay";
       o.innerHTML = `<div class="card modal" role="dialog" aria-modal="true" aria-labelledby="dlg-t" style="text-align:center;padding:32px">
-        ${icon ? `<div class="inset" style="width:72px;height:72px;border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center">${ico(icon, 32, danger ? "#B4173A" : "#0249E1")}</div>` : ""}
+        ${icon ? `<div class="inset" style="width:72px;height:72px;border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center">${ico(icon, 32, danger ? "#B4173A" : "#111111")}</div>` : ""}
         <h2 id="dlg-t">${esc(title)}</h2><div class="muted" style="margin-top:8px">${html ? body : esc(body)}</div>
-        <button class="btn ${danger ? "dgf" : "p"} block" data-ok style="margin-top:28px">${danger ? ico("x", 18, "#fff") : ""}${esc(confirm)}</button>
+        <button class="btn ${danger ? "dgf" : "p"} block" data-ok style="margin-top:28px">${danger ? ico("x", 18, "currentColor") : ""}${esc(confirm)}</button>
         <button class="btn block" data-no style="margin-top:14px">${esc(cancel)}</button></div>`;
       const done = (v) => { o.remove(); document.removeEventListener("keydown", key); resolve(v); };
       const key = (e) => { if (e.key === "Escape") done(false); };
@@ -189,13 +191,13 @@
     const me = await PH.api.me();
     const a = (href, label) => `<a href="${href}" class="${active === label ? "on" : ""}">${label}</a>`;
     const html = `<header class="nav">
-      <a class="logo" href="index.html" aria-label="Power House home"><span class="mark">PH</span>POWER HOUSE</a>
+      <a class="logo" href="index.html" aria-label="Power House home"><span class="mark">${PH.ui.ico("power", 18)}</span>POWER HOUSE</a>
       <nav class="links" aria-label="Main">${a("products.html?category=part", "PC Parts")}${a("products.html?category=accessory", "Accessories")}${a("products.html?category=prebuilt", "Prebuilt PCs")}${a("sell.html", "Sell to Us")}</nav>
       <form class="search" role="search" action="products.html"><label class="sr-only" for="q">Search</label>${ico("search", 18)}<input id="q" name="q" type="search" placeholder="Search parts and PCs…"></form>
       <div class="nav-right">
         <a href="${me ? "account.html" : "login.html"}" class="hide-sm">${ico("user")}${me ? "Hi, " + esc(me.name.split(" ")[0] + " " + (me.name.split(" ")[1] || "")) : "Log in"}</a>
         <a href="orders.html" class="hide-sm">${ico("box")}My Orders</a>
-        <a href="cart.html" class="cart-btn" aria-label="Cart">${ico("cart", 18, "#fff")}<span data-cart-count>${PH.cart.count()}</span></a>
+        <a href="cart.html" class="cart-btn" aria-label="Cart">${ico("cart", 18, "currentColor")}<span data-cart-count>${PH.cart.count()}</span></a>
       </div></header>`;
     document.body.insertAdjacentHTML("afterbegin", html);
     const tabs = [["index.html", "home", "Home"], ["products.html", "search", "Search"], ["cart.html", "cart", "Cart"], ["orders.html", "box", "Orders"], [me ? "account.html" : "login.html", "user", "Account"]];
@@ -225,13 +227,21 @@
     else { btn.disabled = false; if (btn.dataset.label) btn.innerHTML = btn.dataset.label; }
   }
 
+  /* HUD page header (D31): grid band, eyebrow, big title, outline ghost word, optional right side */
+  function hudHead({ eyebrow, title, sub = "", ghost = "", right = "", crumb = "" }) {
+    return `<header class="page-head hud-grid"><div class="hud-ghost page-ghost" aria-hidden="true">${esc(ghost || title)}</div>
+      <div class="hud-cross" style="right:18px;top:14px"></div>
+      <div class="row between wrapflex" style="position:relative;gap:16px;align-items:flex-end"><div>${crumb ? `<div class="small muted mono" style="margin-bottom:10px">${crumb}</div>` : ""}<div class="hud-eyebrow">${esc(eyebrow)}</div>
+      <h1 class="hud-title page-title">${esc(title)}</h1>${sub ? `<div class="muted" style="margin-top:10px;max-width:640px">${sub}</div>` : ""}</div>${right}</div></header>`;
+  }
+
   /* product card / row */
   function productCard(p) {
     const out = p.stock <= 0;
     return `<article class="card pcard"><a href="product.html?sku=${encodeURIComponent(p.sku)}" class="art" aria-label="${esc(p.name)}">${art(p.art, p.name)}</a>
       <div class="body"><div>${stockBadge(p)}</div><a class="name" href="product.html?sku=${encodeURIComponent(p.sku)}">${esc(p.name)}</a>
       <div class="price">${money(p.price)}</div><div class="small muted" style="margin-bottom:12px">${out ? "0 in stock" : `${p.stock} in stock`}</div>
-      ${out ? `<button class="btn sm block" disabled>Out of stock</button>` : `<button class="btn p sm block" data-add="${esc(p.sku)}">${ico("cart", 18, "#fff")}Add to cart</button>`}</div></article>`;
+      ${out ? `<button class="btn sm block" disabled>Out of stock</button>` : `<button class="btn p sm block" data-add="${esc(p.sku)}">${ico("cart", 18, "currentColor")}Add to cart</button>`}</div></article>`;
   }
   function productRow(p) {
     return `<div class="card prow"><a class="art" href="product.html?sku=${encodeURIComponent(p.sku)}" aria-label="${esc(p.name)}">${art(p.art, p.name)}</a>
@@ -248,6 +258,6 @@
     PH.cart.add(sku, 1); toast(`Added ${p.name} to your cart`);
   });
 
-  PH.ui = { $, $$, esc, money, date, time, when, qs, ico, art, badge, stockBadge, statusBadge, cancelledBy, steps, vsteps, donut, toast, dialog, modal, typeahead,
+  PH.ui = { hudHead, $, $$, esc, money, date, time, when, qs, ico, art, badge, stockBadge, statusBadge, cancelledBy, steps, vsteps, donut, toast, dialog, modal, typeahead,
     maskPhone, maskDigits, maskMoney, moneyValue, theme, storeHeader, storeFooter, requireLogin, errorText, busy, productCard, productRow, CRED };
 })();

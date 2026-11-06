@@ -12,7 +12,7 @@
   const TRADE_FILTERS = { All: () => true, "To review": (t) => t.status === "Under review", "Waiting for customer": (t) => t.status === "Offer sent",
     "To receive": (t) => t.status === "Accepted", "To add to stock": (t) => t.status === "Received", Done: (t) => t.status === "In stock", Declined: (t) => ["Declined", "Rejected"].includes(t.status) };
 
-  document.body.insertAdjacentHTML("afterbegin", `<header class="nav"><a class="logo" href="index.html"><span class="mark">PH</span><span class="hide-xs">POWER HOUSE</span> <span class="staff-tag">Staff</span></a>
+  document.body.insertAdjacentHTML("afterbegin", `<header class="nav"><a class="logo" href="index.html"><span class="mark">${PH.ui.ico("power", 18)}</span><span class="hide-xs">POWER HOUSE</span> <span class="staff-tag">Staff</span></a>
     <div class="nav-right"><span class="hide-sm">${badge("gray", "Warehouse Staff")}</span><b class="hide-sm">${esc(staff)}</b>
       <button class="btn xs icon" id="theme" aria-label="Switch dark mode">${ico("moon", 16)}</button>
       <a href="../store-web/index.html" class="hide-sm small">View store</a><button class="btn xs" id="logout" aria-label="Log out">${ico("logout", 16)}<span class="hide-xs">Log out</span></button></div></header>`);
@@ -33,7 +33,7 @@
   const stockBar = (p) => {
     const target = p.targetStock || Math.max(p.lowStockLevel * 3, p.stock, 1);
     const pct = Math.min(100, (p.stock / target) * 100), mark = Math.min(100, (p.lowStockLevel / target) * 100);
-    const col = p.stock <= 0 ? "#B4173A" : p.low ? "#D97706" : "#0249E1";
+    const col = p.stock <= 0 ? "#B4173A" : p.low ? "#D97706" : "#F5C800";
     return `<div class="stockbar" title="Stock ${p.stock}, low level ${p.lowStockLevel}, target ${target}"><div class="track"><div class="fillbar" style="width:${pct}%;background:${col}"></div>${p.lowStockLevel ? `<div class="mark" style="left:${mark}%"></div>` : ""}</div><span class="small"><b>${p.stock}</b> / ${target}</span></div>`;
   };
   const invBadge = (p) => p.stock <= 0 ? badge("out", "Sold out") : p.low ? badge("low", p.stock === p.lowStockLevel ? "At low level" : "Low") : p.condition === "used" ? badge("used", "Used") : badge("ok", "In stock");
@@ -71,8 +71,8 @@
           <section class="card row keep center" style="width:min(560px,100%);gap:24px;flex-wrap:wrap">
             <div class="grow" style="min-width:230px"><div class="muted">Stock value (retail)</div><div style="font:700 42px var(--font-head)" data-count="${value}" data-money>${money(value)}</div>
               <div class="row keep center" style="gap:10px"><span class="small muted">+${weekIn} units received this week</span></div>
-              <div class="g2" style="gap:8px 16px;margin-top:18px">${[["#0249E1", c.ok + " in stock"], ["#D97706", c.low + " low"], ["#B4173A", c.out + " sold out"], ["#80B0EC", c.used + " used"]].map(([col, t]) => `<span class="small row keep center" style="gap:8px"><i style="width:12px;height:12px;border-radius:3px;background:${col};display:inline-block"></i>${t}</span>`).join("")}</div></div>
-            ${donut([[c.ok, "#0249E1"], [c.low, "#D97706"], [c.out, "#B4173A"], [c.used, "#80B0EC"]], 170, 22, inv.length, "SKUs")}
+              <div class="g2" style="gap:8px 16px;margin-top:18px">${[["#111111", c.ok + " in stock"], ["#D97706", c.low + " low"], ["#B4173A", c.out + " sold out"], ["#9CA3AF", c.used + " used"]].map(([col, t]) => `<span class="small row keep center" style="gap:8px"><i style="width:12px;height:12px;border-radius:3px;background:${col};display:inline-block"></i>${t}</span>`).join("")}</div></div>
+            ${donut([[c.ok, "#111111"], [c.low, "#D97706"], [c.out, "#B4173A"], [c.used, "#9CA3AF"]], 170, 22, inv.length, "SKUs")}
           </section>
           <section class="grow tiles">${tiles.map(([href, i, n, t, d]) => `<a class="card tile" href="${href}" ${t === "add a product" ? 'data-newproduct' : ""} style="padding:18px"><div class="row keep between center"><span class="circ">${ico(i, 20)}</span><b style="font:700 30px var(--font-head)" ${typeof n === "number" ? `data-count="${n}"` : ""}>${n}</b></div><b style="display:block;margin-top:12px">${t}</b><span class="small muted">${esc(d)}</span></a>`).join("")}</section>
         </div>
@@ -116,7 +116,7 @@
         <div class="row between center wrapflex" style="margin-top:20px;gap:14px"><div class="row keep center wrapflex" style="gap:12px">
           <div class="search" style="width:260px"><label class="sr-only" for="iq">Search stock</label>${ico("search", 18)}<input id="iq" type="search" placeholder="Search SKU or name" value="${esc(st.invQ)}"></div>
           <div class="chips">${cats.map((c) => `<button class="chip ${c === st.invCat ? "on" : ""}" data-icat="${c}">${label(c)} · ${n(c)}</button>`).join("")}</div></div>
-          <button class="btn p sm" id="newp">${ico("plus", 18, "#fff")}New product</button></div>
+          <button class="btn p sm" id="newp">${ico("plus", 18, "currentColor")}New product</button></div>
         <div class="card table-card" style="margin-top:18px"><div class="table-wrap"><table><thead><tr><th>Product</th><th>Category</th><th>Stock (bar = target, line = low level)</th><th>Low level</th><th>Price</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
         ${list.map((p) => `<tr><td><div class="row keep center" style="gap:12px"><div class="art" style="width:64px;height:44px;flex-shrink:0">${art(p.art, p.name)}</div><div><b>${esc(p.name)}</b><div class="small muted">${esc(p.sku)}</div></div></div></td>
           <td>${esc(CAT[p.category] || p.category)}<div class="small muted">${esc(p.type)}</div></td><td>${stockBar(p)}</td><td>${p.lowStockLevel}</td><td>${money(p.price)}</td><td>${invBadge(p)}</td>
@@ -186,12 +186,12 @@
         return `<div style="border-radius:20px;background:#111111;color:#fff;padding:22px;margin-top:16px">
           <div class="row keep between"><div><div class="small" style="color:#A9B4C8">From</div><b style="font:700 18px var(--font-head)">${esc(set.supplierName)}</b><div class="small" style="color:#A9B4C8">Fictional company · SIMULATED</div></div>
           <div style="text-align:right"><div class="small" style="color:#A9B4C8">To</div><b style="font:700 18px var(--font-head)">Power House Warehouse</b><div class="small" style="color:#A9B4C8">${esc(po.poNumber)}</div></div></div>
-          <div style="position:relative;height:40px;margin:20px 0 6px"><div style="position:absolute;top:18px;left:0;right:0;height:4px;border-radius:2px;background:#3A445C"></div><div style="position:absolute;top:18px;left:0;width:${shipped ? 70 : 15}%;height:4px;border-radius:2px;background:#0249E1"></div>
-            <div style="position:absolute;left:calc(${shipped ? 70 : 15}% - 22px);top:0;width:44px;height:40px;border-radius:12px;background:#0249E1;display:flex;align-items:center;justify-content:center">${ico("truck", 22, "#fff")}</div></div>
+          <div style="position:relative;height:40px;margin:20px 0 6px"><div style="position:absolute;top:18px;left:0;right:0;height:4px;border-radius:2px;background:#3A445C"></div><div style="position:absolute;top:18px;left:0;width:${shipped ? 70 : 15}%;height:4px;border-radius:2px;background:#F5C800"></div>
+            <div style="position:absolute;left:calc(${shipped ? 70 : 15}% - 22px);top:0;width:44px;height:40px;border-radius:6px;background:#FFE500;color:#111111;display:flex;align-items:center;justify-content:center">${ico("truck", 22, "currentColor")}</div></div>
           <div class="row keep between"><span class="small" style="color:#A9B4C8">${shipped ? "Shipped " + date(po.shippedAt) : "Confirmed " + date(po.createdAt)}</span><b style="color:#DAFB71">${shipped ? "On the way" : "Being prepared"}</b></div></div>
           <div style="margin-top:14px"><div class="leader"><span>Items</span><span class="fill"></span><span>${esc(p.name)} × ${po.qty}</span></div><div class="leader"><span>Supplier SKU → our SKU</span><span class="fill"></span><span>${esc(po.supplierSku)} → ${esc(po.sku)}</span></div>
           <div class="leader"><span>Stock after receiving</span><span class="fill"></span><b>${p.stock} → ${p.stock + po.qty}</b></div></div>
-          <div class="actions" style="margin-top:18px">${shipped ? `<button class="btn p grow" data-receive="${po.poNumber}">${ico("check", 18, "#fff")}Receive and add ${po.qty} to stock</button>` : `<button class="btn o grow" data-ship="${po.poNumber}">Mark shipped (simulated)</button>`}</div>`;
+          <div class="actions" style="margin-top:18px">${shipped ? `<button class="btn p grow" data-receive="${po.poNumber}">${ico("check", 18, "currentColor")}Receive and add ${po.qty} to stock</button>` : `<button class="btn o grow" data-ship="${po.poNumber}">Mark shipped (simulated)</button>`}</div>`;
       };
       return `<h2>Warehouse</h2>${tabsHtml("stock-log")}
         <div class="row stack-md" style="margin-top:22px;align-items:flex-start">

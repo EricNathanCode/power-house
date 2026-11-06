@@ -49,7 +49,7 @@
   }
 
   function draw() {
-    $("#app").innerHTML = `<div class="row between center wrapflex"><h2>Checkout</h2><a href="cart.html" class="small">← Back to cart</a></div>
+    $("#app").innerHTML = `${PH.ui.hudHead({ eyebrow: `Checkout // step ${st.step + 1} of 4`, title: "Checkout", ghost: "PAY", right: '<a href="cart.html" class="btn sm">← Back to cart</a>' })}
       <div style="max-width:760px;margin-top:14px">${steps(STEPS, st.step)}</div>
       <div class="row start stack-md" style="margin-top:22px"><section class="card grow">${body()}</section>${summary()}</div>`;
     if (st.step === 1) {
@@ -86,7 +86,7 @@
           modal(`<div class="row keep between center"><h2>GCash</h2><span class="badge sim">SIMULATED</span></div>
             <p class="muted">This is a pretend payment screen for the demo. No money moves and nothing connects to the real GCash.</p>
             <div class="inset" style="padding:20px;text-align:center;margin:18px 0"><div class="small muted">Amount to pay</div><div class="disp" style="font:700 40px var(--font-head)">${money(total)}</div><div class="small muted">Merchant: Power House (sample)</div></div>
-            <button class="btn p block" data-pay>${ico("check", 18, "#fff")}Pay ${money(total)} (simulated)</button>
+            <button class="btn p block" data-pay>${ico("check", 18, "currentColor")}Pay ${money(total)} (simulated)</button>
             <button class="btn dg block" data-fail style="margin-top:12px">Make the payment fail (test)</button>
             <button class="btn block" data-close style="margin-top:12px">Cancel and go back</button>`, (o, close) => {
             o.querySelector("[data-pay]").onclick = async (e) => { busy(e.currentTarget, true, "Paying…"); try { const r = await PH.api.simulateGcash(total, "pay"); resolve(r.ref); close(); } catch (err) { reject(err); close(); } };

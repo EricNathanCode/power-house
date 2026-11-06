@@ -7,18 +7,18 @@
   function draw() {
     const q = PH.api.quote(PH.cart.get());
     if (!q.items.length) {
-      $("#app").innerHTML = `<h2>Your cart</h2>
+      $("#app").innerHTML = `${PH.ui.hudHead({ eyebrow: "Cart // empty", title: "Your cart", ghost: "CART" })}
         <div class="card" style="max-width:760px;margin:22px auto 0;padding:44px;text-align:center">
           <div class="inset" style="width:120px;height:120px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center"><div class="circ lg" style="width:76px;height:76px">${ico("cart", 32)}</div></div>
           <h2 style="margin-top:22px">Your cart is empty</h2>
           <p class="muted" style="max-width:520px;margin:8px auto 0">Add PC parts, accessories or a prebuilt PC. Stock is counted live in our warehouse, so what you see is what's on the shelf.</p>
-          <div class="row keep wrapflex" style="gap:14px;justify-content:center;margin-top:28px"><a class="btn p" href="products.html?category=part">${ico("search", 18, "#fff")}Browse PC parts</a><a class="btn" href="sell.html">${ico("swap", 18)}Sell your parts instead</a></div>
+          <div class="row keep wrapflex" style="gap:14px;justify-content:center;margin-top:28px"><a class="btn p" href="products.html?category=part">${ico("search", 18, "currentColor")}Browse PC parts</a><a class="btn" href="sell.html">${ico("swap", 18)}Sell your parts instead</a></div>
         </div>
         <h3 style="margin:34px 0 14px">Popular right now</h3><div class="g4">${popular.map(productRow).join("")}</div>`;
       return;
     }
     const over = q.items.filter((i) => i.qty > i.stock);
-    $("#app").innerHTML = `<h2>Your cart</h2><div class="muted">${PH.cart.count()} item${PH.cart.count() === 1 ? "" : "s"} · stock is checked again when you place the order</div>
+    $("#app").innerHTML = `${PH.ui.hudHead({ eyebrow: `Cart // ${PH.cart.count()} item${PH.cart.count() === 1 ? "" : "s"}`, title: "Your cart", ghost: "CART", sub: "Stock is checked again when you place the order." })}
       ${over.length ? `<div class="note bad" style="margin-top:16px">${ico("alert", 16)} Stock changed: ${over.map((i) => `${esc(i.name)} has only ${i.stock} left`).join(", ")}. <button class="btn xs" id="fix">Use what's available</button></div>` : ""}
       <div class="row start stack-md" style="margin-top:22px">
         <div class="card table-card grow"><div class="table-wrap"><table>

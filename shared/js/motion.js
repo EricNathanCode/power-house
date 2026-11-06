@@ -10,8 +10,8 @@
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
   const calm = () => reduce.matches;
   const SEL = [".wrap > .card", ".wrap > section", ".wrap > .row > *", ".wrap > .row > section > *", ".pcard", ".prow", ".tiles > *", ".cats > *",
-    ".kpis > *", ".wrap > h3", ".table-card", ".stack > *", "article.card", ".marquee", ".carousel"].join(",");
-  const SKIP = ".overlay, .toasts, .dd, .nav, .tabbar, .foot, .track .pcard";
+    ".kpis > *", ".wrap > h3", ".table-card", ".stack > *", "article.card", ".wrap > .marquee", ".wrap > .carousel", ".hud-sec .reveal", ".hud-sec > .carousel"].join(",");
+  const SKIP = ".overlay, .toasts, .dd, .nav, .tabbar, .foot, .track .pcard, .hud-rail, .show-list";
   const bootAt = performance.now();
   const seen = new WeakSet();
 
@@ -49,6 +49,7 @@
     const fmt = (n) => (money ? "₱" : "") + Math.round(n).toLocaleString("en-PH");
     const step = (t) => { const k = Math.min((t - start) / dur, 1); const e = 1 - Math.pow(1 - k, 4); el.textContent = fmt(to * e); if (k < 1) requestAnimationFrame(step); };
     requestAnimationFrame(step);
+    setTimeout(() => (el.textContent = fmt(to)), dur + 150); // always end on the real number, even if frames were paused
   }
 
   /* ---------- ticker (left ← right) ---------- */

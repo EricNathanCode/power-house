@@ -8,19 +8,19 @@
   if (PH.session.customerId() && !isSignup) { location.href = safeNext; return; }
 
   const side = `<div class="photo grow" style="min-height:420px;background-image:linear-gradient(rgba(17,17,17,.15),rgba(17,17,17,.55)),url('../shared/img/keyboard.jpg');display:flex;flex-direction:column;justify-content:flex-end;padding:32px;color:#fff">
-      <h1 style="color:#fff">Your PC<br>hardware store.</h1><p style="max-width:420px">Shop parts, accessories and prebuilt PCs. Track every order from packing to received.</p>
+      <div class="hud-eyebrow" style="color:#FFE500">Power House // ${isSignup ? "new account" : "log in"}</div><h1 class="hud-title" style="color:#fff">Your PC<br>hardware store.</h1><p style="max-width:420px">Shop parts, accessories and prebuilt PCs. Track every order from packing to received.</p>
       <div class="small">Photo: backlit keyboard by Colin, CC BY-SA 4.0</div></div>`;
   const f = (id, label, type, extra = "", help = "") => `<div class="field" id="f-${id}"><label for="${id}">${label}</label><input id="${id}" type="${type}" ${extra}>${help ? `<div class="help">${help}</div>` : ""}<div class="err hidden"></div></div>`;
 
   $("#app").innerHTML = `<div class="row start" style="gap:40px">${side}
-    <form class="card" style="width:min(480px,100%);padding:36px" novalidate id="form">
-      ${isSignup ? `<h2>Create your account</h2><p class="muted">Sign up to place orders, track them and sell us your parts.</p>
+    <form class="card hud-frame" style="width:min(480px,100%);padding:36px" novalidate id="form">
+      ${isSignup ? `<div class="hud-eyebrow">Account // sign up</div><h2 class="bracket" style="margin-top:8px">Create your account</h2><p class="muted">Sign up to place orders, track them and sell us your parts.</p>
         <div style="margin-top:24px">${f("name", "Full name", "text", 'autocomplete="name"')}${f("email", "Email", "email", 'autocomplete="email" placeholder="name@example.com"')}${f("phone", "Mobile number (optional)", "tel", 'inputmode="numeric" placeholder="09__ ___ ____"')}
         ${f("pw", "Password", "password", 'autocomplete="new-password"', "At least 8 characters, with one number")}${f("pw2", "Confirm password", "password", 'autocomplete="new-password"')}
         <label class="check"><input type="checkbox" id="agree"> I understand this is a student demo with sample data only</label><div class="err hidden" id="agree-err"></div></div>
         <button class="btn p block" style="margin-top:32px" id="go">Create account</button>
         <p style="text-align:center" class="muted">Already have an account? <a href="login.html${qs("next") ? "?next=" + encodeURIComponent(next) : ""}">Log in</a></p>`
-      : `<h2>Welcome back</h2><p class="muted">Log in to your Power House account.</p>
+      : `<div class="hud-eyebrow">Account // log in</div><h2 class="bracket" style="margin-top:8px">Welcome back</h2><p class="muted">Log in to your Power House account.</p>
         <div class="note" style="margin:18px 0 22px">Sample account: <b>test1@example.com</b> / <b>sample123</b></div>
         ${f("email", "Email", "email", 'autocomplete="email" placeholder="name@example.com"')}${f("pw", "Password", "password", 'autocomplete="current-password"')}
         <div class="err hidden" id="login-err" style="margin-top:-10px;margin-bottom:12px"></div>

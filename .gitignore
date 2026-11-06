@@ -1,0 +1,14 @@
+# dependencies and builds
+node_modules/
+dist/
+# secrets: never commit the real .env (Neon connection string, passwords)
+.env
+.env.*
+!.env.example
+# editor / OS
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+# local tool settings
+.claude/

@@ -35,6 +35,17 @@ power-house/
    (Or run `python -m http.server 5500` in this folder and open http://localhost:5500/store-web/index.html.)
 3. Use a local server rather than double-clicking the file, so every page shares the same saved data.
 
+### Page links (after you start Live Server or the python server)
+| Part | Open this | Code |
+|---|---|---|
+| 🛒 Store (customer) | http://localhost:5500/store-web/index.html | [store-web/index.html](store-web/index.html) |
+| 💰 Sell to Us | http://localhost:5500/store-web/sell.html | [store-web/sell.html](store-web/sell.html) |
+| 💰 My trade-ins (offer status) | http://localhost:5500/store-web/trade-ins.html | [store-web/trade-ins.html](store-web/trade-ins.html) |
+| 🏭 Staff Portal (log in) | http://localhost:5500/staff-dashboard/login.html | [staff-dashboard/login.html](staff-dashboard/login.html) |
+| 🏭 Staff dashboard (after login) | http://localhost:5500/staff-dashboard/index.html | [staff-dashboard/index.html](staff-dashboard/index.html) |
+
+Staff dashboard tabs open directly too, e.g. `…/staff-dashboard/index.html#trade-ins` (Sell to Us reviews), `#inventory`, `#low-stock`, `#stock-log`.
+
 | Who | Login (sample only) |
 |---|---|
 | Customer | `test1@example.com` / `sample123` |

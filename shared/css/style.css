@@ -314,3 +314,91 @@ td.nowrap, .nowrap { white-space: nowrap; }
   .actions .btn { flex: 1; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+
+/* ================= MOTION (D30) =================
+   Easing: strong ease-out for things arriving, gentle in-out for state changes. Never bare "ease".
+   Only transform / opacity / filter are animated. All of it turns off with prefers-reduced-motion. */
+:root { --ease-out: cubic-bezier(.22, 1, .36, 1); --ease-io: cubic-bezier(.65, 0, .35, 1); }
+
+/* page arrives */
+#app { animation: page-in .35s var(--ease-out) both; }
+@keyframes page-in { from { opacity: 0; transform: translateY(6px); } }
+
+/* scroll reveal: added by motion.js only, so the page still works without JS */
+.rv { opacity: 0; transform: translateY(14px); filter: blur(4px); }
+.rv.in { opacity: 1; transform: none; filter: blur(0); transition: opacity .55s var(--ease-out) var(--d, 0ms), transform .55s var(--ease-out) var(--d, 0ms), filter .55s var(--ease-out) var(--d, 0ms); }
+/* moving parts inside a revealed block */
+.rv.in .leader .fill { transform-origin: left; animation: grow-x .7s var(--ease-out) calc(var(--d, 0ms) + 150ms) both; }
+.rv.in .pbar i, .rv.in .stockbar .fillbar, .rv.in .bar.done { transform-origin: left; animation: grow-x .8s var(--ease-out) calc(var(--d, 0ms) + 200ms) both; }
+.rv.in .donut-svg { animation: spin-in .9s var(--ease-out) calc(var(--d, 0ms) + 100ms) both; }
+@keyframes grow-x { from { transform: scaleX(0); } }
+@keyframes spin-in { from { transform: rotate(-70deg) scale(.92); opacity: 0; } }
+
+/* step bars fill when you move to the next step (checkout, Sell to Us) */
+.steps .bar.done { transform-origin: left; animation: grow-x .5s var(--ease-out) both; }
+.dot.cur { animation: pop .35s var(--ease-out) both; }
+@keyframes pop { from { transform: scale(.85); } }
+
+/* hover and press feedback (fast: these happen a lot) */
+.btn { transition: background .15s ease-out, border-color .15s ease-out, transform .12s var(--ease-out); }
+.btn:active:not(:disabled) { transform: scale(.97); }
+.pcard, .prow, .tile, .cats > a { transition: transform .25s var(--ease-out), box-shadow .25s var(--ease-out), border-color .25s var(--ease-out); }
+.pcard:hover, .prow:hover, .tile:hover { transform: translateY(-3px); }
+.pcard .art svg, .prow .art svg { transition: transform .35s var(--ease-out); }
+.pcard:hover .art svg, .prow:hover .art svg { transform: translateY(-3px) scale(1.04); }
+.cats > a .cat-photo { transition: transform .4s var(--ease-out); }
+.cats > a:hover .cat-photo { transform: scale(1.03); }
+.qa .circ { transition: background .2s ease-out, color .2s ease-out, transform .2s var(--ease-out); }
+.qa:hover .circ { transform: translateY(-2px); }
+
+/* cart count bumps when something is added */
+.cart-btn.bump { animation: bump .45s var(--ease-out); }
+@keyframes bump { 30% { transform: scale(1.14); } }
+
+/* header: a soft shadow once you scroll */
+.nav { transition: box-shadow .25s ease-out; }
+.nav.scrolled { box-shadow: 0 6px 20px rgba(16, 24, 40, .08); }
+
+/* reading progress bar under the header */
+.scroll-progress { position: fixed; left: 0; right: 0; top: 0; height: 3px; z-index: 40; background: var(--action); transform: scaleX(0); transform-origin: left; pointer-events: none; }
+
+/* dialogs, toasts, dropdowns: enter stronger than exit */
+.overlay { animation: fade-in .2s ease-out both; }
+.overlay .modal { animation: modal-in .32s var(--ease-out) both; }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes modal-in { from { opacity: 0; transform: translateY(10px) scale(.97); filter: blur(4px); } }
+.toast { animation: toast-in .35s var(--ease-out) both; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(12px); filter: blur(3px); } }
+.dd:not(.hidden) { transform-origin: top; animation: dd-in .18s var(--ease-out) both; }
+@keyframes dd-in { from { opacity: 0; transform: translateY(-4px) scale(.98); } }
+
+/* ticker: "live from the warehouse", moves right to left, pauses on hover/focus or with the button */
+.marquee { position: relative; display: flex; align-items: center; overflow: hidden; border-radius: 14px; background: var(--ink); color: #fff; margin-top: 28px; }
+[data-theme="dark"] .marquee { background: var(--soft); color: var(--ink); }
+.marquee-track { display: flex; flex-shrink: 0; gap: 0; white-space: nowrap; animation: marquee 38s linear infinite; padding: 13px 0; }
+.marquee-track span { display: inline-flex; align-items: center; gap: 8px; padding: 0 22px; font-weight: 700; font-size: 14px; border-right: 1px solid rgba(255, 255, 255, .18); }
+.marquee-track b { color: var(--good); }
+[data-theme="dark"] .marquee-track b { color: var(--action-ink); }
+.marquee:hover .marquee-track, .marquee:focus-within .marquee-track, .marquee.paused .marquee-track { animation-play-state: paused; }
+.marquee-toggle { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); z-index: 1; background: rgba(255, 255, 255, .14); color: inherit; border: 0; border-radius: 8px; padding: 6px 10px; font: 700 12px var(--font-body); cursor: pointer; }
+@keyframes marquee { to { transform: translateX(-50%); } }
+
+/* carousel: swipe / scroll-snap, arrow buttons, mouse drag */
+.carousel { position: relative; }
+.carousel .head { display: flex; justify-content: space-between; align-items: center; margin: 36px 0 14px; gap: 12px; }
+.carousel .arrows { display: flex; gap: 8px; }
+.carousel .track { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(230px, 260px); gap: 18px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; padding: 4px 4px 14px; margin: 0 -4px; scrollbar-width: thin; cursor: grab; }
+.carousel .track > * { scroll-snap-align: start; }
+.carousel .track.dragging { cursor: grabbing; scroll-snap-type: none; scroll-behavior: auto; user-select: none; }
+.carousel .track.dragging * { pointer-events: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  .rv { opacity: 1 !important; transform: none !important; filter: none !important; }
+  .marquee-track { animation: none !important; flex-wrap: wrap; white-space: normal; }
+  .marquee-track span[aria-hidden] { display: none; }
+  .marquee-toggle { display: none; }
+}
+.marquee-toggle { background: #111111; box-shadow: -28px 0 18px 4px #111111; }
+[data-theme="dark"] .marquee-toggle { background: var(--soft); box-shadow: -28px 0 18px 4px var(--soft); }

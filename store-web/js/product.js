@@ -7,7 +7,7 @@
   catch (e) { $("#app").innerHTML = `<div class="card" style="text-align:center;padding:40px"><h2>Product not found</h2><p class="muted">It may have been removed.</p><a class="btn p" href="products.html">Browse products</a></div>`; PH.ui.storeFooter(); return; }
   document.title = p.name + " · Power House";
   const catName = { part: "PC Parts", accessory: "Accessories", prebuilt: "Prebuilt PCs" }[p.category];
-  const related = (await PH.api.listProducts({ category: p.category })).filter((x) => x.sku !== p.sku).sort((a, b) => (b.type === p.type) - (a.type === p.type)).slice(0, 4);
+  const related = (await PH.api.listProducts({ category: p.category })).filter((x) => x.sku !== p.sku).sort((a, b) => (b.type === p.type) - (a.type === p.type)).slice(0, 8);
   const inCart = () => (PH.cart.get().find((x) => x.sku === p.sku) || {}).qty || 0;
   const maxQty = () => Math.max(0, p.stock - inCart());
   let qty = Math.min(1, maxQty());
@@ -28,7 +28,7 @@
         <div class="small muted" style="margin-top:14px">${ico("bolt", 16)} Stock is checked again when you place the order, so two people can't buy the last one.</div>
       </div>
     </div>
-    ${related.length ? `<h3 style="margin:36px 0 14px">You may also need</h3><div class="g4">${related.map(productRow).join("")}</div>` : ""}`;
+    ${related.length ? `<section class="carousel" aria-label="You may also need"><div class="head"><h3>You may also need</h3><div class="arrows"><button class="btn icon sm" data-prev aria-label="Previous products">${ico("chev", 18).replace("<svg", '<svg style="transform:rotate(180deg)"')}</button><button class="btn icon sm" data-next aria-label="More products">${ico("chev", 18)}</button></div></div><div class="track">${related.map(PH.ui.productCard).join("")}</div></section>` : ""}`;
 
   function sync() {
     const m = maxQty();

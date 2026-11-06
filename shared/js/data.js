@@ -4,7 +4,7 @@
 window.PH = window.PH || {};
 
 PH.SEED = {
-  version: 3,
+  version: 4,
   products: [
     // PC parts
     { sku: "CPU-6C-12T", name: "6-core Desktop CPU (Sample)", category: "part", type: "CPU", price: 7990, stock: 8, lowStockLevel: 3, condition: "new", art: "cpu",
@@ -32,7 +32,7 @@ PH.SEED = {
       specs: { Switches: "Blue (sample)", Layout: "Full size", Lighting: "RGB", Warranty: "1 year" } },
     { sku: "MS-WL-01", name: "Wireless Mouse", category: "accessory", type: "Mouse", price: 690, stock: 30, lowStockLevel: 15, condition: "new", art: "mouse",
       specs: { Sensor: "Optical, 3200 DPI", Battery: "AA × 1", Connection: "2.4 GHz USB", Warranty: "1 year" } },
-    { sku: "HS-GAME-01", name: "Gaming Headset", category: "accessory", type: "Headset", price: 1490, stock: 14, lowStockLevel: 6, condition: "new", art: "headset",
+    { sku: "HS-GAME-01", name: "Gaming Headset", category: "accessory", type: "Headset", price: 1490, stock: 4, lowStockLevel: 6, condition: "new", art: "headset",
       specs: { Driver: "50mm", Mic: "Fold-away", Connection: "3.5mm + USB", Warranty: "1 year" } },
     { sku: "MON-24-144", name: "24-inch 144Hz Monitor", category: "accessory", type: "Monitor", price: 8990, stock: 6, lowStockLevel: 3, condition: "new", art: "monitor",
       specs: { Size: "24 inch", Refresh: "144Hz", Panel: "IPS", Warranty: "2 years" } },
@@ -52,31 +52,36 @@ PH.SEED = {
 
   staff: [{ username: "staff01", password: "staff123", name: "staff01" }],
 
+  /* ORDERS: one of each status, so every step is easy to see.
+     ORD-0001 Placed: staff can Mark as Packing or Cancel; the customer can cancel too
+     ORD-0002 Packing: the customer can still cancel
+     ORD-0003 Shipping: cancel is blocked from here on
+     ORD-0004 Out for Delivery · ORD-0005 Received (done)
+     ORD-0006 Cancelled by the customer · ORD-0007 Cancelled by staff (stock went back both times) */
   orders: [
-    { id: "ORD-0000", customerId: "CUST-001", items: [{ sku: "KB-MECH-001", name: "Mechanical Keyboard RGB", qty: 1, price: 2190 }], shipping: 0, total: 2190, paymentMethod: "COD", paymentRef: null,
-      status: "Received", address: "123 Sample St., Indang, Cavite 4122", createdAt: "2026-10-21T09:10:00",
-      history: [{ status: "Placed", at: "2026-10-21T09:10:00", by: "CUST-001" }, { status: "Packing", at: "2026-10-21T11:00:00", by: "staff01" }, { status: "Shipping", at: "2026-10-22T08:30:00", by: "staff01" }, { status: "Out for Delivery", at: "2026-10-23T09:00:00", by: "staff01" }, { status: "Received", at: "2026-10-23T15:20:00", by: "staff01" }] },
-    { id: "ORD-0001", customerId: "CUST-001", items: [{ sku: "RAM-DDR4-16GB", name: "DDR4 16GB RAM 3200MHz", qty: 2, price: 2450 }, { sku: "KB-MECH-001", name: "Mechanical Keyboard RGB", qty: 1, price: 2190 }], shipping: 150, total: 7240,
-      paymentMethod: "COD", paymentRef: null, status: "Packing", address: "123 Sample St., Indang, Cavite 4122", createdAt: "2026-11-03T09:58:00",
-      history: [{ status: "Placed", at: "2026-11-03T09:58:00", by: "CUST-001" }, { status: "Packing", at: "2026-11-03T10:42:00", by: "staff01" }] },
-    { id: "ORD-0002", customerId: "CUST-002", items: [{ sku: "PC-PH-STARTER", name: "Gaming PC Starter", qty: 1, price: 38500 }], shipping: 150, total: 38650,
-      paymentMethod: "GCASH_SIM", paymentRef: "SIM-GC-0001", status: "Shipping", address: "45 Example Ave., Dasmariñas, Cavite 4114", createdAt: "2026-10-30T14:05:00",
-      history: [{ status: "Placed", at: "2026-10-30T14:05:00", by: "CUST-002" }, { status: "Packing", at: "2026-10-30T16:00:00", by: "staff01" }, { status: "Shipping", at: "2026-11-03T09:15:00", by: "staff01" }] },
-    { id: "ORD-0003", customerId: "CUST-001", items: [{ sku: "RAM-DDR4-8GB", name: "DDR4 8GB RAM 3200MHz", qty: 1, price: 1350 }], shipping: 150, total: 1500,
-      paymentMethod: "COD", paymentRef: null, status: "Cancelled", address: "123 Sample St., Indang, Cavite 4122", createdAt: "2026-11-02T18:20:00",
-      history: [{ status: "Placed", at: "2026-11-02T18:20:00", by: "CUST-001" }, { status: "Cancelled", at: "2026-11-02T19:05:00", by: "CUST-001" }] },
-    { id: "ORD-0004", customerId: "CUST-003", items: [{ sku: "SSD-NVME-1TB", name: "1TB NVMe SSD", qty: 1, price: 3990 }], shipping: 150, total: 4140,
-      paymentMethod: "COD", paymentRef: null, status: "Placed", address: "7 Demo Rd., Imus, Cavite 4103", createdAt: "2026-11-06T08:03:00",
-      history: [{ status: "Placed", at: "2026-11-06T08:03:00", by: "CUST-003" }] }
+    { id: "ORD-0001", customerId: "CUST-001", items: [{ sku: "MS-WL-01", name: "Wireless Mouse", qty: 1, price: 690 }], shipping: 150, total: 840, paymentMethod: "COD", paymentRef: null, status: "Placed", address: "123 Sample St., Indang, Cavite 4122", createdAt: "2026-11-06T08:30:00", history: [{ status: "Placed", at: "2026-11-06T08:30:00", by: "CUST-001" }] },
+    { id: "ORD-0002", customerId: "CUST-001", items: [{ sku: "RAM-DDR4-16GB", name: "DDR4 16GB RAM 3200MHz", qty: 2, price: 2450 }], shipping: 150, total: 5050, paymentMethod: "GCASH_SIM", paymentRef: "SIM-GC-0001", status: "Packing", address: "123 Sample St., Indang, Cavite 4122", createdAt: "2026-11-05T14:10:00", history: [{ status: "Placed", at: "2026-11-05T14:10:00", by: "CUST-001" }, { status: "Packing", at: "2026-11-06T09:00:00", by: "staff01" }] },
+    { id: "ORD-0003", customerId: "CUST-002", items: [{ sku: "PC-PH-STARTER", name: "Gaming PC Starter", qty: 1, price: 38500 }], shipping: 0, total: 38500, paymentMethod: "COD", paymentRef: null, status: "Shipping", address: "45 Example Ave., Dasmariñas, Cavite 4114", createdAt: "2026-11-04T10:00:00", history: [{ status: "Placed", at: "2026-11-04T10:00:00", by: "CUST-002" }, { status: "Packing", at: "2026-11-04T13:00:00", by: "staff01" }, { status: "Shipping", at: "2026-11-05T09:00:00", by: "staff01" }] },
+    { id: "ORD-0004", customerId: "CUST-001", items: [{ sku: "KB-MECH-001", name: "Mechanical Keyboard RGB", qty: 1, price: 2190 }], shipping: 150, total: 2340, paymentMethod: "COD", paymentRef: null, status: "Out for Delivery", address: "123 Sample St., Indang, Cavite 4122", createdAt: "2026-11-03T09:00:00", history: [{ status: "Placed", at: "2026-11-03T09:00:00", by: "CUST-001" }, { status: "Packing", at: "2026-11-03T11:00:00", by: "staff01" }, { status: "Shipping", at: "2026-11-04T08:30:00", by: "staff01" }, { status: "Out for Delivery", at: "2026-11-06T08:00:00", by: "staff01" }] },
+    { id: "ORD-0005", customerId: "CUST-001", items: [{ sku: "SSD-NVME-1TB", name: "1TB NVMe SSD", qty: 1, price: 3990 }], shipping: 150, total: 4140, paymentMethod: "COD", paymentRef: null, status: "Received", address: "123 Sample St., Indang, Cavite 4122", createdAt: "2026-11-01T11:00:00", history: [{ status: "Placed", at: "2026-11-01T11:00:00", by: "CUST-001" }, { status: "Packing", at: "2026-11-01T13:00:00", by: "staff01" }, { status: "Shipping", at: "2026-11-02T08:30:00", by: "staff01" }, { status: "Out for Delivery", at: "2026-11-03T09:00:00", by: "staff01" }, { status: "Received", at: "2026-11-03T15:20:00", by: "staff01" }] },
+    { id: "ORD-0006", customerId: "CUST-001", items: [{ sku: "RAM-DDR4-8GB", name: "DDR4 8GB RAM 3200MHz", qty: 1, price: 1350 }], shipping: 150, total: 1500, paymentMethod: "COD", paymentRef: null, status: "Cancelled", address: "123 Sample St., Indang, Cavite 4122", createdAt: "2026-11-02T18:20:00", history: [{ status: "Placed", at: "2026-11-02T18:20:00", by: "CUST-001" }, { status: "Cancelled", at: "2026-11-02T19:05:00", by: "CUST-001" }] },
+    { id: "ORD-0007", customerId: "CUST-002", items: [{ sku: "HS-GAME-01", name: "Gaming Headset", qty: 1, price: 1490 }], shipping: 150, total: 1640, paymentMethod: "COD", paymentRef: null, status: "Cancelled", address: "45 Example Ave., Dasmariñas, Cavite 4114", createdAt: "2026-11-02T09:40:00", history: [{ status: "Placed", at: "2026-11-02T09:40:00", by: "CUST-002" }, { status: "Cancelled", at: "2026-11-02T10:30:00", by: "staff01" }] }
   ],
 
+  /* TRADE-INS (Sell to Us): one of each status.
+     TRD-0001, TRD-0002 Under review: staff Send offer or Decline (TRD-0002 asks far too much, so try Decline)
+     TRD-0003 Offer sent: the customer (test1) can Accept or Decline
+     TRD-0004 Accepted: staff Mark received · TRD-0005 Received: staff Add to stock (used)
+     TRD-0006 Declined by the customer · TRD-0007 Declined by staff · TRD-0008 Done, in stock */
   tradeIns: [
-    { id: "TRD-0000", customerId: "CUST-002", category: "PC Parts", type: "RAM", brand: "Sample Brand", model: "DDR4 16GB", condition: "Good", askingPrice: 1400, suggestedOffer: 1100, offer: 1100, photos: 2,
-      status: "In stock", createdAt: "2026-10-25T10:00:00", history: [{ status: "Submitted", at: "2026-10-25T10:00:00" }, { status: "Offer sent", at: "2026-10-25T15:00:00" }, { status: "Accepted", at: "2026-10-26T09:00:00" }, { status: "Received", at: "2026-10-28T11:00:00" }, { status: "In stock", at: "2026-10-28T11:30:00" }] },
-    { id: "TRD-0001", customerId: "CUST-001", category: "PC Parts", type: "GPU", brand: "Sample Brand", model: "Sample GPU 8GB", condition: "Good", askingPrice: 10000, suggestedOffer: 9000, offer: 9000, photos: 3,
-      status: "Offer sent", createdAt: "2026-11-03T13:00:00", history: [{ status: "Submitted", at: "2026-11-03T13:00:00" }, { status: "Offer sent", at: "2026-11-04T10:00:00" }] },
-    { id: "TRD-0002", customerId: "CUST-004", category: "Accessories", type: "Mouse", brand: "Sample Brand", model: "Wireless Mouse", condition: "Fair", askingPrice: 600, suggestedOffer: 207, offer: null, photos: 1,
-      status: "Under review", createdAt: "2026-11-05T17:40:00", history: [{ status: "Submitted", at: "2026-11-05T17:40:00" }] }
+    { id: "TRD-0001", customerId: "CUST-001", category: "Accessories", type: "Mouse", brand: "Sample Brand", model: "Wireless Mouse", condition: "Fair", askingPrice: 300, suggestedOffer: 207, offer: null, photos: 2, status: "Under review", createdAt: "2026-11-06T09:00:00", history: [{ status: "Submitted", at: "2026-11-06T09:00:00" }] },
+    { id: "TRD-0002", customerId: "CUST-002", category: "PC Parts", type: "Graphics card (GPU)", brand: "Sample Brand", model: "Old GPU 4GB", condition: "Fair", askingPrice: 15000, suggestedOffer: 6000, offer: null, photos: 1, status: "Under review", createdAt: "2026-11-06T07:45:00", history: [{ status: "Submitted", at: "2026-11-06T07:45:00" }] },
+    { id: "TRD-0003", customerId: "CUST-001", category: "PC Parts", type: "Graphics card (GPU)", brand: "Sample Brand", model: "Sample GPU 8GB", condition: "Good", askingPrice: 10000, suggestedOffer: 9000, offer: 9000, photos: 3, status: "Offer sent", createdAt: "2026-11-04T13:00:00", history: [{ status: "Submitted", at: "2026-11-04T13:00:00" }, { status: "Offer sent", at: "2026-11-05T10:00:00" }] },
+    { id: "TRD-0004", customerId: "CUST-001", category: "PC Parts", type: "RAM", brand: "Sample Brand", model: "DDR4 16GB", condition: "Like new", askingPrice: 1500, suggestedOffer: 1470, offer: 1450, photos: 2, status: "Accepted", createdAt: "2026-11-03T15:00:00", history: [{ status: "Submitted", at: "2026-11-03T15:00:00" }, { status: "Offer sent", at: "2026-11-04T09:00:00" }, { status: "Accepted", at: "2026-11-04T12:00:00" }] },
+    { id: "TRD-0005", customerId: "CUST-002", category: "Accessories", type: "Keyboard", brand: "Sample Brand", model: "Office Keyboard", condition: "Good", askingPrice: 900, suggestedOffer: 986, offer: 950, photos: 2, status: "Received", createdAt: "2026-11-02T10:00:00", history: [{ status: "Submitted", at: "2026-11-02T10:00:00" }, { status: "Offer sent", at: "2026-11-02T16:00:00" }, { status: "Accepted", at: "2026-11-03T08:00:00" }, { status: "Received", at: "2026-11-05T11:00:00" }] },
+    { id: "TRD-0006", customerId: "CUST-001", category: "PC Parts", type: "Storage (HDD)", brand: "Sample Brand", model: "1TB HDD", condition: "Fair", askingPrice: 1500, suggestedOffer: 1197, offer: 1000, photos: 1, status: "Declined", createdAt: "2026-11-01T10:00:00", history: [{ status: "Submitted", at: "2026-11-01T10:00:00" }, { status: "Offer sent", at: "2026-11-01T15:00:00" }, { status: "Declined", at: "2026-11-02T09:00:00" }] },
+    { id: "TRD-0007", customerId: "CUST-001", category: "PC Parts", type: "PC case", brand: "Sample Brand", model: "Mid Tower Case", condition: "Fair", askingPrice: 2500, suggestedOffer: null, offer: null, photos: 1, status: "Rejected", note: "Sorry, we don't buy PC cases right now.", createdAt: "2026-10-30T10:00:00", history: [{ status: "Submitted", at: "2026-10-30T10:00:00" }, { status: "Rejected", at: "2026-10-30T16:00:00" }] },
+    { id: "TRD-0008", customerId: "CUST-002", category: "PC Parts", type: "RAM", brand: "Sample Brand", model: "DDR4 16GB", condition: "Good", askingPrice: 1400, suggestedOffer: 1103, offer: 1100, photos: 2, status: "In stock", createdAt: "2026-10-25T10:00:00", history: [{ status: "Submitted", at: "2026-10-25T10:00:00" }, { status: "Offer sent", at: "2026-10-25T15:00:00" }, { status: "Accepted", at: "2026-10-26T09:00:00" }, { status: "Received", at: "2026-10-28T11:00:00" }, { status: "In stock", at: "2026-10-28T11:30:00" }] }
   ],
 
   // the fictional bulk supplier's catalog (SIMULATED). Supplier SKU → our SKU is the data mapping (Module 1).
@@ -96,21 +101,27 @@ PH.SEED = {
     { supplierSku: "GB-MON-24", sku: "MON-24-144", unitPrice: 7100, minOrderQty: 3 }
   ],
 
+  /* SUPPLIER REORDERS (SIMULATED supplier): one of each status.
+     PO-0001 Delivered (+20 keyboards) · PO-0002 Shipped: Simulate delivery · PO-0003 Confirmed: Mark shipped
+     Low stock now: 1TB NVMe SSD has no reorder yet (try Approve reorder); 512GB SSD and Gaming Headset already have one */
   purchaseOrders: [
-    { poNumber: "PO-0001", sku: "KB-MECH-001", supplierSku: "GB-KB-01", qty: 20, unitPrice: 1200, status: "DELIVERED", approvedBy: "staff01", createdAt: "2026-11-01T10:00:00", deliveredAt: "2026-11-06T09:30:00" },
-    { poNumber: "PO-0002", sku: "RAM-DDR4-16GB", supplierSku: "GB-RAM-16", qty: 20, unitPrice: 1800, status: "SHIPPED", approvedBy: "staff01", createdAt: "2026-11-04T09:00:00", shippedAt: "2026-11-04T16:00:00" }
+    { poNumber: "PO-0001", sku: "KB-MECH-001", supplierSku: "GB-KB-01", qty: 20, unitPrice: 1200, status: "DELIVERED", approvedBy: "staff01", createdAt: "2026-11-01T10:00:00", shippedAt: "2026-11-02T09:00:00", deliveredAt: "2026-11-04T09:30:00" },
+    { poNumber: "PO-0002", sku: "SSD-NVME-512", supplierSku: "GB-SSD-512", qty: 30, unitPrice: 2100, status: "SHIPPED", approvedBy: "staff01", createdAt: "2026-11-04T09:00:00", shippedAt: "2026-11-05T16:00:00" },
+    { poNumber: "PO-0003", sku: "HS-GAME-01", supplierSku: "GB-HS-01", qty: 10, unitPrice: 900, status: "CONFIRMED", approvedBy: "staff01", createdAt: "2026-11-06T08:00:00" }
   ],
 
   stockMovements: [
-    { id: "MOV-0001", sku: "KB-MECH-001", change: -1, reason: "sale", refId: "ORD-0000", at: "2026-10-21T09:10:00" },
-    { id: "MOV-0002", sku: "RAM-DDR4-16GB-USED", change: 1, reason: "tradeIn", refId: "TRD-0000", at: "2026-10-28T11:30:00" },
-    { id: "MOV-0003", sku: "PC-PH-STARTER", change: -1, reason: "sale", refId: "ORD-0002", at: "2026-10-30T14:05:00" },
-    { id: "MOV-0004", sku: "RAM-DDR4-8GB", change: -1, reason: "sale", refId: "ORD-0003", at: "2026-11-02T18:20:00" },
-    { id: "MOV-0005", sku: "RAM-DDR4-8GB", change: 1, reason: "cancel", refId: "ORD-0003", at: "2026-11-02T19:05:00" },
-    { id: "MOV-0006", sku: "RAM-DDR4-16GB", change: -2, reason: "sale", refId: "ORD-0001", at: "2026-11-03T09:58:00" },
-    { id: "MOV-0007", sku: "KB-MECH-001", change: -1, reason: "sale", refId: "ORD-0001", at: "2026-11-03T09:58:00" },
-    { id: "MOV-0008", sku: "SSD-NVME-1TB", change: -1, reason: "sale", refId: "ORD-0004", at: "2026-11-06T08:03:00" },
-    { id: "MOV-0009", sku: "KB-MECH-001", change: 20, reason: "supplier", refId: "PO-0001", at: "2026-11-06T09:30:00" }
+    { id: "MOV-0001", sku: "RAM-DDR4-16GB-USED", change: 1, reason: "tradeIn", refId: "TRD-0008", at: "2026-10-28T11:30:00" },
+    { id: "MOV-0002", sku: "SSD-NVME-1TB", change: -1, reason: "sale", refId: "ORD-0005", at: "2026-11-01T11:00:00" },
+    { id: "MOV-0003", sku: "HS-GAME-01", change: -1, reason: "sale", refId: "ORD-0007", at: "2026-11-02T09:40:00" },
+    { id: "MOV-0004", sku: "HS-GAME-01", change: 1, reason: "cancel", refId: "ORD-0007", at: "2026-11-02T10:30:00" },
+    { id: "MOV-0005", sku: "RAM-DDR4-8GB", change: -1, reason: "sale", refId: "ORD-0006", at: "2026-11-02T18:20:00" },
+    { id: "MOV-0006", sku: "RAM-DDR4-8GB", change: 1, reason: "cancel", refId: "ORD-0006", at: "2026-11-02T19:05:00" },
+    { id: "MOV-0007", sku: "KB-MECH-001", change: -1, reason: "sale", refId: "ORD-0004", at: "2026-11-03T09:00:00" },
+    { id: "MOV-0008", sku: "PC-PH-STARTER", change: -1, reason: "sale", refId: "ORD-0003", at: "2026-11-04T10:00:00" },
+    { id: "MOV-0009", sku: "KB-MECH-001", change: 20, reason: "supplier", refId: "PO-0001", at: "2026-11-04T09:30:00" },
+    { id: "MOV-0010", sku: "RAM-DDR4-16GB", change: -2, reason: "sale", refId: "ORD-0002", at: "2026-11-05T14:10:00" },
+    { id: "MOV-0011", sku: "MS-WL-01", change: -1, reason: "sale", refId: "ORD-0001", at: "2026-11-06T08:30:00" }
   ],
 
   settings: { supplierOnline: true, supplierName: "[Supplier name TBD]" }

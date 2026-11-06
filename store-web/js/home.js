@@ -5,7 +5,18 @@
   const all = await PH.api.listProducts();
   const pc = all.find((p) => p.sku === "PC-PH-STARTER");
   const count = (c) => all.filter((p) => p.category === c).length;
-  const popular = ["RAM-DDR4-16GB", "SSD-NVME-1TB", "KB-MECH-001", "HDD-2TB-72"].map((s) => all.find((p) => p.sku === s)).filter(Boolean);
+  const popular = ["RAM-DDR4-16GB", "SSD-NVME-1TB", "KB-MECH-001", "GPU-8GB", "HDD-2TB-72", "MON-24-144", "CPU-6C-12T", "HS-GAME-01", "PC-PH-OFFICE"].map((s) => all.find((p) => p.sku === s)).filter(Boolean);
+  const low = all.filter((p) => p.lowStockLevel > 0 && p.stock > 0 && p.stock <= p.lowStockLevel);
+  const used = all.filter((p) => p.condition === "used" && p.stock > 0);
+  const units = all.reduce((s, p) => s + Math.max(p.stock, 0), 0);
+  const news = [
+    `${PH.ui.ico("bolt", 16)} Live from the warehouse: <b>${units} units</b> on the shelf`,
+    ...low.map((p) => `▲ Only <b>${p.stock} left</b>: ${esc(p.name)}`),
+    ...used.map((p) => `◆ Used, tested: ${esc(p.name)} <b>${money(p.price)}</b>`),
+    `${PH.ui.ico("truck", 16)} Free shipping from <b>${money(PH.api.FREE_SHIPPING_FROM)}</b>`,
+    `${PH.ui.ico("cash", 16)} Cash on Delivery or GCash <b>(SIMULATED)</b>`,
+    `${PH.ui.ico("swap", 16)} Sell us your old parts: <b>up to 60%</b> of our price`
+  ];
   const cats = [
     ["part", "PC Parts", "../shared/img/motherboard.jpg", "items"],
     ["accessory", "Accessories", "../shared/img/keyboard.jpg", "items"],
@@ -31,8 +42,12 @@
     </aside>` : ""}
   </section>
 
-  <h3 style="margin:36px 0 14px">Popular right now</h3>
-  <div class="g4" style="gap:20px">${popular.map(productRow).join("")}</div>
+  <div class="marquee" role="region" aria-label="Warehouse news"><div class="marquee-track">${news.map((n) => `<span>${n}</span>`).join("")}</div><button type="button" class="marquee-toggle" aria-pressed="false">Pause</button></div>
+
+  <section class="carousel" aria-label="Popular right now">
+    <div class="head"><h3>Popular right now</h3><div class="arrows"><button class="btn icon sm" data-prev aria-label="Previous products">${PH.ui.ico("chev", 18).replace("<svg", '<svg style="transform:rotate(180deg)"')}</button><button class="btn icon sm" data-next aria-label="More products">${PH.ui.ico("chev", 18)}</button></div></div>
+    <div class="track">${popular.map(PH.ui.productCard).join("")}</div>
+  </section>
 
   <div class="inset row wrapflex" style="margin-top:30px;padding:16px 22px;gap:20px;justify-content:space-between">
     ${[["bolt", "Stock counted live by our warehouse"], ["truck", "Every order tracked to your door"], ["cash", "Cash on Delivery"], ["shield", "1-year shop warranty"]].map(([i, t]) => `<span class="row keep center" style="gap:10px;font-weight:700">${ico(i, 20, "#0249E1")}${t}</span>`).join("")}

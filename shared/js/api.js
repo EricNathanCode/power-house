@@ -187,13 +187,13 @@
       return clone(load().orders.filter((o) => o.customerId === id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
     },
     /* PUT /orders/:id/cancel  (D5) */
-    async cancelOrder(id) {
+    async cancelOrder(id, { asStaff = false } = {}) {
       await wait(250);
-      const who = PH.session.staff() || needCustomer();
+      const who = asStaff ? needStaff() : needCustomer();
       const db = load();
       const o = db.orders.find((x) => x.id === id);
       if (!o) throw new ApiError("NOT_FOUND", "Order not found.");
-      if (!PH.session.staff() && o.customerId !== who) throw new ApiError("FORBIDDEN", "This order belongs to another account.");
+      if (!asStaff && o.customerId !== who) throw new ApiError("FORBIDDEN", "This order belongs to another account.");
       if (!["Placed", "Packing"].includes(o.status)) throw new ApiError("TOO_LATE", "This order has already shipped, so it can't be cancelled.");
       o.status = "Cancelled"; o.history.push({ status: "Cancelled", at: now(), by: who });
       for (const it of o.items) { const p = db.products.find((x) => x.sku === it.sku); if (p) { p.stock += it.qty; move(db, it.sku, it.qty, "cancel", id); } }
@@ -321,7 +321,7 @@
     async rejectTradeIn(id) {
       await wait(); needStaff(); const db = load(); const t = db.tradeIns.find((x) => x.id === id);
       if (!t || t.status !== "Under review") throw new ApiError("BAD_STEP", "Only items under review can be declined.");
-      t.status = "Rejected"; t.history.push({ status: "Rejected", at: now() }); save(db); return true;
+      t.status = "Rejected"; t.note = t.note || "We couldn't make an offer for this item this time."; t.history.push({ status: "Rejected", at: now() }); save(db); return true;
     },
     async markTradeInReceived(id) {
       await wait(); needStaff(); const db = load(); const t = db.tradeIns.find((x) => x.id === id);
@@ -332,7 +332,7 @@
     async addTradeInToStock(id, price) {
       await wait(); needStaff(); const db = load(); const t = db.tradeIns.find((x) => x.id === id);
       if (!t || t.status !== "Received") throw new ApiError("BAD_STEP", "Receive the item first.");
-      const base = (t.brand + "-" + t.model).toUpperCase().replace(/[^A-Z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 24);
+      const base = String(t.model).toUpperCase().replace(/[^A-Z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 28);
       const sku = base + "-USED";
       let p = db.products.find((x) => x.sku === sku);
       if (!p) {

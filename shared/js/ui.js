@@ -38,7 +38,8 @@
     edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13 7 4 4"/>',
     image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/>',
     trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
-    refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/>'
+    refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/>',
+    chev: '<path d="m9 6 6 6-6 6"/>'
   };
   const ico = (name, size = 20, color = "currentColor") =>
     `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0">${ICONS[name] || ICONS.box}</svg>`;
@@ -75,9 +76,13 @@
     const map = { Placed: "blue", Packing: "blue", Shipping: "blue", "Out for Delivery": "blue", Received: "ok", Cancelled: "gray",
       "Under review": "gray", "Offer sent": "blue", Accepted: "blue", Declined: "gray", Rejected: "gray", "In stock": "ok",
       CONFIRMED: "blue", SHIPPED: "low", DELIVERED: "ok" };
-    const label = { CONFIRMED: "Confirmed", SHIPPED: "Shipped", DELIVERED: "Delivered" }[s] || s;
-    return badge(map[s] || "gray", label);
+    const label = { CONFIRMED: "Confirmed", SHIPPED: "Shipped", DELIVERED: "Delivered", Declined: "Declined by customer", Rejected: "Declined by staff", Accepted: "Offer accepted" }[s] || s;
+    const kind = { Declined: "out", Rejected: "out", Cancelled: "out", Accepted: "ok" }[s] || map[s] || "gray";
+    return badge(kind, label);
   };
+
+  /* who cancelled an order: the last history entry says it */
+  const cancelledBy = (o) => { const h = o.history[o.history.length - 1]; return h && String(h.by).startsWith("CUST") ? "by the customer" : "by staff"; };
 
   /* step bar (UX rule 2) */
   function steps(names, cur) {
@@ -93,7 +98,7 @@
     const r = (size - sw) / 2, c = 2 * Math.PI * r, total = parts.reduce((s, p) => s + p[0], 0) || 1;
     let off = 0;
     const segs = parts.map(([v, col]) => { const len = (c * v) / total; const g = v > 0 && v < total ? 3 : 0; const s = `<circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-dasharray="${Math.max(len - g, 0)} ${c}" stroke-dashoffset="${-off}" transform="rotate(-90 ${size / 2} ${size / 2})"/>`; off += len; return s; }).join("");
-    return `<div style="position:relative;width:${size}px;height:${size}px;flex-shrink:0"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true"><circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="var(--line)" stroke-width="${sw}"/>${segs}</svg><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><b style="font:700 ${Math.round(size / 6)}px var(--font-head)">${center}</b><span class="small muted">${sub}</span></div></div>`;
+    return `<div style="position:relative;width:${size}px;height:${size}px;flex-shrink:0"><svg class="donut-svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true"><circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="var(--line)" stroke-width="${sw}"/>${segs}</svg><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><b style="font:700 ${Math.round(size / 6)}px var(--font-head)">${center}</b><span class="small muted">${sub}</span></div></div>`;
   }
 
   /* toasts + confirm dialog (UX rule 1: buttons say the action) */
@@ -243,6 +248,6 @@
     PH.cart.add(sku, 1); toast(`Added ${p.name} to your cart`);
   });
 
-  PH.ui = { $, $$, esc, money, date, time, when, qs, ico, art, badge, stockBadge, statusBadge, steps, vsteps, donut, toast, dialog, modal, typeahead,
+  PH.ui = { $, $$, esc, money, date, time, when, qs, ico, art, badge, stockBadge, statusBadge, cancelledBy, steps, vsteps, donut, toast, dialog, modal, typeahead,
     maskPhone, maskDigits, maskMoney, moneyValue, theme, storeHeader, storeFooter, requireLogin, errorText, busy, productCard, productRow, CRED };
 })();

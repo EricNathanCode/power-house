@@ -55,6 +55,25 @@ Staff dashboard tabs open directly too, e.g. `…/staff-dashboard/index.html#tra
 
 **Reset demo data:** the link in the store footer, or the button in Staff → Overview.
 
+## Sample data: one of each status (so you can see approve and decline)
+| Record | Status now | Try this | You should see |
+|---|---|---|---|
+| ORD-0001 | Placed | Staff → Orders → **Mark as Packing** (approve) or **Cancel** | Packing / "Cancelled · by staff", stock goes back |
+| ORD-0002 | Packing | Customer → My Orders → **Cancel order** | "Cancelled · by the customer", stock goes back |
+| ORD-0003 | Shipping | Customer → try to cancel | Blocked: "already shipped" |
+| ORD-0004 / 0005 | Out for Delivery / Received | Staff → **Mark as Received** on 0004 | Order finished |
+| ORD-0006 / 0007 | Cancelled | (just look) | "by the customer" / "by staff" |
+| TRD-0001 | Under review | Staff → Trade-ins → **Send offer** (approve) | Offer sent → the customer can answer |
+| TRD-0002 | Under review (asks ₱15,000, offer ₱6,000) | Staff → **Decline** | Red "Declined by staff", the customer sees the reason |
+| TRD-0003 | Offer sent ₱9,000 | Customer → My trade-ins → **Accept** or **Decline** | "Offer accepted" or red "Declined by customer" |
+| TRD-0004 | Offer accepted | Staff → **Mark received** | Received |
+| TRD-0005 | Received | Staff → **Add to stock (used)** | In stock as a used SKU |
+| TRD-0006 / 0007 / 0008 | Declined by customer / Declined by staff / In stock | (just look) | Each result in its own color |
+| 1TB NVMe SSD | Low stock, no reorder yet | Staff → Low stock → **Approve reorder** | New PO, Confirmed |
+| PO-0003 / PO-0002 | Confirmed / Shipped | Staff → Reorders → **Mark shipped** / **Simulate delivery** | Stock goes up, shows in Stock log |
+
+Customer `test1@example.com` owns ORD-0001/0002/0004/0005/0006 and TRD-0001/0003/0004/0006/0007. Staff → Trade-ins has filter chips (To review, Waiting for customer, To receive, To add to stock, Done, Declined).
+
 ## Rules the mock API already follows
 - Stock goes down the moment an order is placed; check + save + deduct happen together, all or nothing (D6)
 - Cancel only before Shipping; cancelling puts the stock back (D5)

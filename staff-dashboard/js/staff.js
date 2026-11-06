@@ -8,7 +8,9 @@
   const S = PH.api.STATUSES;
   const CAT = { part: "PC Parts", accessory: "Accessories", prebuilt: "Prebuilt" };
   const REASON = { sale: "Sale", cancel: "Cancel", supplier: "Supplier", tradeIn: "Trade-in", restock: "Restock" };
-  const st = { orderFilter: "Open", orderQ: "", invCat: "All", invQ: "", logReason: "all" };
+  const st = { orderFilter: "Open", orderQ: "", invCat: "All", invQ: "", logReason: "all", tradeFilter: "All" };
+  const TRADE_FILTERS = { All: () => true, "To review": (t) => t.status === "Under review", "Waiting for customer": (t) => t.status === "Offer sent",
+    "To receive": (t) => t.status === "Accepted", "To add to stock": (t) => t.status === "Received", Done: (t) => t.status === "In stock", Declined: (t) => ["Declined", "Rejected"].includes(t.status) };
 
   document.body.insertAdjacentHTML("afterbegin", `<header class="nav"><a class="logo" href="index.html"><span class="mark">PH</span><span class="hide-xs">POWER HOUSE</span> <span class="staff-tag">Staff</span></a>
     <div class="nav-right"><span class="hide-sm">${badge("gray", "Warehouse Staff")}</span><b class="hide-sm">${esc(staff)}</b>
@@ -67,12 +69,12 @@
         <h2 style="font-size:36px">${h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"}, ${esc(staff)}</h2>${tabsHtml("overview")}
         <div class="row stack-md" style="margin-top:22px;align-items:stretch">
           <section class="card row keep center" style="width:min(560px,100%);gap:24px;flex-wrap:wrap">
-            <div class="grow" style="min-width:230px"><div class="muted">Stock value (retail)</div><div style="font:700 42px var(--font-head)">${money(value)}</div>
+            <div class="grow" style="min-width:230px"><div class="muted">Stock value (retail)</div><div style="font:700 42px var(--font-head)" data-count="${value}" data-money>${money(value)}</div>
               <div class="row keep center" style="gap:10px"><span class="small muted">+${weekIn} units received this week</span></div>
               <div class="g2" style="gap:8px 16px;margin-top:18px">${[["#0249E1", c.ok + " in stock"], ["#D97706", c.low + " low"], ["#B4173A", c.out + " sold out"], ["#80B0EC", c.used + " used"]].map(([col, t]) => `<span class="small row keep center" style="gap:8px"><i style="width:12px;height:12px;border-radius:3px;background:${col};display:inline-block"></i>${t}</span>`).join("")}</div></div>
             ${donut([[c.ok, "#0249E1"], [c.low, "#D97706"], [c.out, "#B4173A"], [c.used, "#80B0EC"]], 170, 22, inv.length, "SKUs")}
           </section>
-          <section class="grow tiles">${tiles.map(([href, i, n, t, d]) => `<a class="card tile" href="${href}" ${t === "add a product" ? 'data-newproduct' : ""} style="padding:18px"><div class="row keep between center"><span class="circ">${ico(i, 20)}</span><b style="font:700 30px var(--font-head)">${n}</b></div><b style="display:block;margin-top:12px">${t}</b><span class="small muted">${esc(d)}</span></a>`).join("")}</section>
+          <section class="grow tiles">${tiles.map(([href, i, n, t, d]) => `<a class="card tile" href="${href}" ${t === "add a product" ? 'data-newproduct' : ""} style="padding:18px"><div class="row keep between center"><span class="circ">${ico(i, 20)}</span><b style="font:700 30px var(--font-head)" ${typeof n === "number" ? `data-count="${n}"` : ""}>${n}</b></div><b style="display:block;margin-top:12px">${t}</b><span class="small muted">${esc(d)}</span></a>`).join("")}</section>
         </div>
         <div class="row stack-md" style="margin-top:22px;align-items:stretch">
           <section class="card" style="width:min(560px,100%)"><h3>Quick actions</h3><div class="row keep between wrapflex" style="gap:16px;margin-top:16px">
@@ -95,7 +97,7 @@
         ${list.map((o) => {
           const i = S.indexOf(o.status), next = i >= 0 ? S[i + 1] : null, last = o.history[o.history.length - 1];
           return `<tr><td class="nowrap"><b>${esc(o.id)}</b></td><td class="nowrap">${esc(o.customerId)}</td><td class="small">${o.items.map((x) => `${esc(x.name)} ×${x.qty}`).join("<br>")}</td><td>${money(o.total)}</td>
-            <td>${o.paymentMethod === "COD" ? "COD" : `GCash <span class="badge sim">SIM</span>`}</td><td>${statusBadge(o.status)}</td><td class="small">${when(last.at)}</td>
+            <td>${o.paymentMethod === "COD" ? "COD" : `GCash <span class="badge sim">SIM</span>`}</td><td>${statusBadge(o.status)}${o.status === "Cancelled" ? `<div class="small muted">${PH.ui.cancelledBy(o)}</div>` : ""}</td><td class="small">${when(last.at)}</td>
             <td><div class="row keep" style="gap:8px;justify-content:flex-end">${next ? `<button class="btn p xs" data-next="${o.id}" data-to="${next}">Mark as ${next}</button>` : ""}${["Placed", "Packing"].includes(o.status) ? `<button class="btn dg xs" data-ocancel="${o.id}">Cancel</button>` : ""}${!next && !["Placed", "Packing"].includes(o.status) ? '<span class="small muted">Closed</span>' : ""}</div></td></tr>`;
         }).join("") || `<tr><td colspan="8" class="muted" style="text-align:center;padding:28px">No orders match.</td></tr>`}
         </tbody></table></div></div>
@@ -151,8 +153,10 @@
     },
 
     async "trade-ins"() {
-      const list = await PH.api.allTradeIns();
+      const all = await PH.api.allTradeIns();
+      const list = all.filter(TRADE_FILTERS[st.tradeFilter]);
       return page("Trade-ins", "trade-ins", `
+        <div class="chips" style="margin-top:20px">${Object.keys(TRADE_FILTERS).map((f) => `<button class="chip ${f === st.tradeFilter ? "on" : ""}" data-tfilter="${f}">${f} · ${all.filter(TRADE_FILTERS[f]).length}</button>`).join("")}</div>
         <div class="card table-card" style="margin-top:18px"><div class="table-wrap"><table><thead><tr><th>Trade-in</th><th>Customer</th><th>Item</th><th>Condition</th><th>Asking</th><th>Suggested</th><th>Offer</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
         ${list.map((t) => {
           let act = "", offer = t.offer ? money(t.offer) : "—";
@@ -160,12 +164,14 @@
           if (t.status === "Offer sent") act = '<span class="small muted">Waiting for customer</span>';
           if (t.status === "Accepted") act = `<button class="btn p xs" data-recv="${t.id}">Mark received</button>`;
           if (t.status === "Received") act = `<label class="sr-only" for="r-${t.id}">Resale price</label><input type="number" id="r-${t.id}" value="${Math.round((t.offer || 0) * 1.3)}" style="width:110px;height:40px" title="Resale price"><button class="btn p xs" data-tostock="${t.id}">Add to stock (used)</button>`;
-          if (["Declined", "Rejected", "In stock"].includes(t.status)) act = '<span class="small muted">Closed</span>';
+          if (t.status === "Declined") act = '<span class="small muted">Customer said no</span>';
+          if (t.status === "Rejected") act = `<span class="small muted">${esc(t.note || "Declined")}</span>`;
+          if (t.status === "In stock") act = '<span class="small muted">Done</span>';
           const pct = PH.api.OFFER_PCT[t.condition];
-          return `<tr><td class="nowrap"><b>${esc(t.id)}</b><div class="small muted">${date(t.createdAt)}</div></td><td class="nowrap">${esc(t.customerId)}</td><td><b>${esc(t.brand)} ${esc(t.model)}</b><div class="small muted">${esc(t.type)} · ${t.photos || 0} photo(s)</div></td>
+          return `<tr><td class="nowrap"><b>${esc(t.id)}</b><div class="small muted">${date(t.createdAt)}</div></td><td class="nowrap">${esc(t.customerId)}</td><td><b class="nowrap">${esc(t.model)}</b><div class="small muted nowrap">${esc(t.type)} · ${t.photos || 0} ${t.photos === 1 ? "photo" : "photos"}</div></td>
             <td>${esc(t.condition)}</td><td>${money(t.askingPrice)}</td><td>${t.suggestedOffer ? `${money(t.suggestedOffer)} <span class="small muted">(${Math.round(pct * 100)}%)</span>` : '<span class="small muted">price by hand</span>'}</td>
             <td>${offer}</td><td>${statusBadge(t.status)}</td><td><div class="row keep center" style="gap:8px;justify-content:flex-end">${act}</div></td></tr>`;
-        }).join("") || `<tr><td colspan="9" class="muted" style="text-align:center;padding:28px">No trade-ins yet.</td></tr>`}
+        }).join("") || `<tr><td colspan="9" class="muted" style="text-align:center;padding:28px">No trade-ins in “${esc(st.tradeFilter)}”.</td></tr>`}
         </tbody></table></div></div>
         <p class="small muted">Flow: Under review → Offer sent → Accepted (customer) → Received → In stock (as a used item with its own SKU). Suggested offer: Like new 60%, Good 45%, Fair 30% of our retail price.</p>`);
     },
@@ -257,7 +263,7 @@
     if (d.newproduct !== undefined) { e.preventDefault(); location.hash = "inventory"; setTimeout(() => productForm(null), 300); return; }
     if (d.ofilter) { st.orderFilter = d.ofilter; refresh(); }
     if (d.next) { if (await dialog({ title: `Mark ${d.next} as ${d.to}?`, body: "The customer sees this update in My Orders.", confirm: `Mark as ${d.to}`, cancel: "Not yet", icon: "box" })) run(() => PH.api.setOrderStatus(d.next, d.to), `${d.next} is now ${d.to}`); }
-    if (d.ocancel) { if (await dialog({ title: `Cancel ${d.ocancel}?`, body: "The items go back into stock. You can't undo this.", confirm: "Cancel order", cancel: "Keep the order", danger: true, icon: "alert" })) run(() => PH.api.cancelOrder(d.ocancel), `${d.ocancel} cancelled, stock returned`); }
+    if (d.ocancel) { if (await dialog({ title: `Cancel ${d.ocancel}?`, body: "The items go back into stock. You can't undo this.", confirm: "Cancel order", cancel: "Keep the order", danger: true, icon: "alert" })) run(() => PH.api.cancelOrder(d.ocancel, { asStaff: true }), `${d.ocancel} cancelled, stock returned`); }
     if (d.icat) { st.invCat = d.icat; refresh(); }
     if (t.id === "newp") productForm(null);
     if (d.edit) productForm((await PH.api.inventory()).find((p) => p.sku === d.edit));
@@ -270,6 +276,7 @@
     if (d.recv) run(() => PH.api.markTradeInReceived(d.recv), `${d.recv} received`);
     if (d.tostock) { const v = Number($(`#r-${d.tostock}`).value); run(async () => { const r = await PH.api.addTradeInToStock(d.tostock, v); toast(`Added to stock as ${r.sku}`); }); }
     if (d.reason) { st.logReason = d.reason; refresh(); }
+    if (d.tfilter) { st.tradeFilter = d.tfilter; refresh(); }
     if (t.id === "reset") { if (await dialog({ title: "Reset demo data?", body: "Orders, stock, trade-ins and purchase orders go back to the sample data.", confirm: "Reset demo data", cancel: "Keep my data", icon: "refresh" })) { PH.api.resetDemo(); toast("Demo data reset"); refresh(); } }
   });
   $("#app").addEventListener("input", (e) => {

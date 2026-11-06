@@ -27,7 +27,7 @@
         </article>`;
       }).join("") : `<div class="note" style="margin-top:20px">No open orders right now.</div>`}
       ${past.length ? `<h3 style="margin:30px 0 12px">Past orders</h3><div class="card table-card"><div class="table-wrap"><table><thead><tr><th>Order</th><th>Date</th><th>Items</th><th>Total</th><th>Status</th></tr></thead><tbody>
-        ${past.map((o) => `<tr><td><a href="order.html?id=${o.id}">${esc(o.id)}</a></td><td>${date(o.createdAt)}</td><td>${o.items.map((i) => `${esc(i.name)} × ${i.qty}`).join(", ")}</td><td>${money(o.total)}</td><td>${statusBadge(o.status)}${o.status === "Cancelled" ? ' <span class="small muted">stock returned</span>' : ""}</td></tr>`).join("")}
+        ${past.map((o) => `<tr><td><a href="order.html?id=${o.id}">${esc(o.id)}</a></td><td>${date(o.createdAt)}</td><td>${o.items.map((i) => `${esc(i.name)} × ${i.qty}`).join(", ")}</td><td>${money(o.total)}</td><td>${statusBadge(o.status)}${o.status === "Cancelled" ? ` <span class="small muted">${PH.ui.cancelledBy(o)} · stock returned</span>` : ""}</td></tr>`).join("")}
       </tbody></table></div></div>` : ""}`;
   }
 

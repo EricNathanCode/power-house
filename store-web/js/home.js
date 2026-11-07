@@ -40,6 +40,7 @@
 
     <section id="home" class="hud-sec hud-grid" aria-label="Welcome">
       <div class="hud-ghost" id="ghost-hero" aria-hidden="true" style="right:-40px;top:40px">POWER</div>
+      <div class="hud-scan" aria-hidden="true"></div>
       <div class="hud-cross" style="left:24px;top:24px"></div><div class="hud-cross" style="right:24px;bottom:120px"></div>
       <div class="row center" style="gap:48px;position:relative;padding-bottom:40px">
         <div class="grow reveal">
@@ -61,7 +62,7 @@
           </div>
         </div>
       </div>
-      <div class="marquee" role="region" aria-label="Warehouse news" style="position:absolute;left:0;right:0;bottom:0;margin:0"><div class="marquee-track">${news.map((n) => `<span>${n}</span>`).join("")}</div><button type="button" class="marquee-toggle" aria-pressed="false">Pause</button></div>
+      <div class="marquee" role="region" aria-label="Warehouse news" style="position:absolute;left:0;right:0;bottom:0;margin:0"><div class="marquee-track">${news.map((n) => `<span>${n}</span>`).join("")}</div></div>
     </section>
 
     <section id="builds" class="hud-sec" aria-label="Product files">
@@ -109,6 +110,7 @@
     </section>
 
     <section id="sell" class="hud-sec hud-band" aria-label="Sell to Us">
+      <div class="hud-ribbon" aria-hidden="true"><div class="hud-ribbon-track">${(`<span>We buy</span>` + [...new Set(all.map((p) => p.type))].map((t) => `<i>/</i><span>${esc(t)}</span>`).join("") + "<i>//</i>").repeat(2)}</div></div>
       <div class="hud-ghost" aria-hidden="true" style="right:-30px;bottom:-20px;-webkit-text-stroke-color:rgba(17,17,17,.12)">TRADE</div>
       <div class="reveal" style="position:relative"><div class="hud-eyebrow" style="color:#111">Sell to Us // trade-in</div><h2 class="hud-title">Old parts?<br>Sell them to us.</h2></div>
       <div class="g4 reveal" style="margin-top:28px;position:relative">

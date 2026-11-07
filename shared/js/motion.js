@@ -2,9 +2,10 @@
    Weighting: Jakub (polish) for the store, Emil (restraint) for the staff dashboard, a little Jhey for the product showcase.
    - Scroll reveal: opacity + translateY + blur, once, staggered. Elements already on screen after an action appear instantly
      (staff tables redraw after every click, so they must not re-animate).
-   - Ticker: "live from the warehouse" strip moving right to left, pauses on hover/focus, has a Pause button.
+   - Ticker: "live from the warehouse" strip moving right to left, never stops (only the reduce-motion setting turns it off).
    - Carousels: native swipe/scroll-snap + arrow buttons + mouse drag.
    - Scroll progress bar + header shadow once you scroll.
+   - Big titles decode in (letters scramble, then lock in), once. More HUD motion in style.css "Moving parts (D35)".
    Everything turns off with prefers-reduced-motion. */
 (function () {
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -55,13 +56,37 @@
     setTimeout(() => (el.textContent = fmt(to)), dur + 150); // always end on the real number, even if frames were paused
   }
 
+  /* ---------- title decode: letters scramble, then lock in left to right (HUD feel), once per title ---------- */
+  const GLYPHS = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789#/_";
+  const sio = "IntersectionObserver" in window ? new IntersectionObserver((entries) => entries.forEach((e) => {
+    if (!e.isIntersecting) return; sio.unobserve(e.target);
+    if (document.documentElement.classList.contains("ph-loading")) document.addEventListener("ph:ready", () => setTimeout(() => decode(e.target), 150), { once: true });
+    else decode(e.target);
+  }), { threshold: 0.3 }) : null;
+  function decode(el) {
+    const nodes = []; const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    while (w.nextNode()) nodes.push([w.currentNode, w.currentNode.nodeValue]);
+    const total = nodes.reduce((s, [, t]) => s + t.length, 0); if (!total) return;
+    if (!el.hasAttribute("aria-label")) el.setAttribute("aria-label", nodes.map(([, t]) => t).join(" ").replace(/\s+/g, " ").trim()); // screen readers get the real words
+    const dur = Math.min(1000, 360 + total * 26), start = performance.now();
+    const frame = (t) => {
+      const k = Math.min((t - start) / dur, 1), lock = Math.floor(k * total); let i = 0;
+      nodes.forEach(([n, orig]) => { n.nodeValue = [...orig].map((c) => (i++ < lock || /[\s.,!?]/.test(c) ? c : GLYPHS[(Math.random() * GLYPHS.length) | 0])).join(""); });
+      if (k < 1) requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+    setTimeout(() => nodes.forEach(([n, o]) => (n.nodeValue = o)), dur + 120); // always end on the real text
+  }
+  function titles(root) {
+    if (calm() || !sio) return;
+    root.querySelectorAll(".hud-title, .page-title").forEach((el) => { if (el.dataset.dec) return; el.dataset.dec = "1"; sio.observe(el); });
+  }
+
   /* ---------- ticker (left ← right) ---------- */
   function ticker(el) {
     if (el.dataset.ready) return; el.dataset.ready = "1";
     const track = el.querySelector(".marquee-track");
     track.innerHTML += track.innerHTML.replace(/<span /g, '<span aria-hidden="true" '); // second copy for a seamless loop
-    const btn = el.querySelector(".marquee-toggle");
-    if (btn) btn.addEventListener("click", () => { const p = el.classList.toggle("paused"); btn.textContent = p ? "Play" : "Pause"; btn.setAttribute("aria-pressed", p); });
   }
 
   /* ---------- carousel (swipe, arrows, drag) ---------- */
@@ -109,6 +134,7 @@
   function enhance(root) {
     root.querySelectorAll(".marquee").forEach(ticker);
     root.querySelectorAll(".carousel").forEach(carousel);
+    titles(root);
     scan(root);
   }
   const mo = new MutationObserver((list) => {

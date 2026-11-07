@@ -373,14 +373,13 @@ td.nowrap, .nowrap { white-space: nowrap; }
 .dd:not(.hidden) { transform-origin: top; animation: dd-in .18s var(--ease-out) both; }
 @keyframes dd-in { from { opacity: 0; transform: translateY(-4px) scale(.98); } }
 
-/* ticker: "live from the warehouse", moves right to left, pauses on hover/focus or with the button */
+/* ticker: "live from the warehouse", moves right to left non-stop (no pause button, no hover stop) */
 .marquee { position: relative; display: flex; align-items: center; overflow: hidden; border-radius: 14px; background: var(--ink); color: #fff; margin-top: 28px; }
 [data-theme="dark"] .marquee { background: var(--soft); color: var(--ink); }
 .marquee-track { display: flex; flex-shrink: 0; gap: 0; white-space: nowrap; animation: marquee 38s linear infinite; padding: 13px 0; }
 .marquee-track span { display: inline-flex; align-items: center; gap: 8px; padding: 0 22px; font-weight: 700; font-size: 14px; border-right: 1px solid rgba(255, 255, 255, .18); }
 .marquee-track b { color: var(--good); }
 [data-theme="dark"] .marquee-track b { color: var(--action-ink); }
-.marquee:hover .marquee-track, .marquee:focus-within .marquee-track, .marquee.paused .marquee-track { animation-play-state: paused; }
 .marquee-toggle { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); z-index: 1; background: rgba(255, 255, 255, .14); color: inherit; border: 0; border-radius: 8px; padding: 6px 10px; font: 700 12px var(--font-body); cursor: pointer; }
 @keyframes marquee { to { transform: translateX(-50%); } }
 
@@ -460,7 +459,7 @@ input:focus, select:focus, textarea:focus { border-color: #111111; box-shadow: 0
 .marquee-track span { border-right-color: rgba(17, 17, 17, .25); font-family: var(--font-mono); text-transform: uppercase; font-size: 13px; }
 .marquee-track b { color: #111111; background: rgba(17, 17, 17, .08); padding: 0 4px; }
 .marquee-toggle { background: #FFE500; box-shadow: -28px 0 18px 4px #FFE500; color: #111111; }
-[data-theme="dark"] .marquee, [data-theme="dark"] .marquee-toggle { background: #FFE500; color: #111111; box-shadow: -28px 0 18px 4px #FFE500; }
+[data-theme="dark"] .marquee { background: #FFE500; color: #111111; box-shadow: none; }
 [data-theme="dark"] .marquee-track b { color: #111111; }
 .dd button:hover, .dd button.hl { background: var(--sel-tint); color: #111111; }
 [data-theme="dark"] .dd button:hover, [data-theme="dark"] .dd button.hl { color: #FFE500; }
@@ -692,3 +691,40 @@ td .badge.sb { height: auto; min-height: 26px; padding-top: 4px; padding-bottom:
 [data-theme="dark"] .badge.sb.st-stock { background: #0A0E14; color: #FFE500; box-shadow: inset 3px 0 0 #FFE500; border: 1px solid #FFE500; }
 .badge.sb.st-decl-c { background: #F1F3F6; color: #9E1430; box-shadow: inset 3px 0 0 #E0294A; border: 1px solid transparent; }
 [data-theme="dark"] .badge.sb.st-decl-c { background: #1C2430; color: #FF9FB0; box-shadow: inset 3px 0 0 #FF4D6A; border: 1px solid transparent; }
+
+
+/* ---------- Moving parts (D35, 2026-11-07): HUD motion, no glow. All of it stops with reduce-motion ---------- */
+/* primary buttons: a fill wipes across on hover */
+.btn.p { background-image: linear-gradient(#111111, #111111); background-repeat: no-repeat; background-size: 0% 100%; transition: background-size .35s var(--ease-out), color .2s ease, transform .1s ease; }
+.btn.p:hover:not(:disabled) { background-color: var(--action); background-image: linear-gradient(#111111, #111111); background-size: 100% 100%; color: #FFE500; }
+[data-theme="dark"] .btn.p, [data-theme="dark"] .btn.p:hover:not(:disabled) { background-image: linear-gradient(#F2F2F2, #F2F2F2); }
+[data-theme="dark"] .btn.p:hover:not(:disabled) { color: #111111; }
+/* product cards: corner brackets lock on when you point at one */
+.pcard { --brk: #111111; background-image: linear-gradient(var(--brk), var(--brk)), linear-gradient(var(--brk), var(--brk)), linear-gradient(var(--brk), var(--brk)), linear-gradient(var(--brk), var(--brk)), linear-gradient(var(--brk), var(--brk)), linear-gradient(var(--brk), var(--brk)), linear-gradient(var(--brk), var(--brk)), linear-gradient(var(--brk), var(--brk));
+  background-repeat: no-repeat; background-position: 0 0, 0 0, 100% 0, 100% 0, 0 100%, 0 100%, 100% 100%, 100% 100%;
+  background-size: 0 2px, 2px 0, 0 2px, 2px 0, 0 2px, 2px 0, 0 2px, 2px 0; transition: background-size .3s var(--ease-out), box-shadow .15s ease, border-color .15s ease, transform .2s var(--ease-out); }
+[data-theme="dark"] .pcard { --brk: #FFE500; }
+.pcard:hover { background-size: 18px 2px, 2px 18px, 18px 2px, 2px 18px, 18px 2px, 2px 18px, 18px 2px, 2px 18px; }
+/* hero: a thin scan line sweeps down the grid */
+.hud-scan { position: absolute; left: 0; right: 0; top: 0; height: 1px; pointer-events: none; background: linear-gradient(90deg, transparent, rgba(17, 17, 17, .28) 30%, rgba(17, 17, 17, .28) 70%, transparent); }
+[data-theme="dark"] .hud-scan { background: linear-gradient(90deg, transparent, rgba(255, 229, 0, .45) 30%, rgba(255, 229, 0, .45) 70%, transparent); }
+/* Sell band: black "we buy" ribbon moving left to right (the hero ticker moves the other way) */
+.hud-ribbon { position: absolute; left: 0; right: 0; top: 0; overflow: hidden; background: #111111; color: #FFE500; pointer-events: none; }
+.hud-ribbon-track { display: flex; width: max-content; white-space: nowrap; padding: 9px 0; font: 600 13px var(--font-mono); letter-spacing: 2px; text-transform: uppercase; }
+.hud-ribbon-track span, .hud-ribbon-track i { padding: 0 14px; font-style: normal; }
+.hud-ribbon-track i { color: rgba(255, 229, 0, .45); padding: 0; }
+.hud-band { padding-top: 84px; }
+@media (prefers-reduced-motion: no-preference) {
+  .hud-scan { animation: hud-scan 7s linear infinite; }
+  .hud-ribbon-track { animation: ribbon-right 32s linear infinite; }
+  .hud-eyebrow::before { animation: hud-blink 1.6s steps(1) infinite; }
+  .reveal.in .hud-frame::before { animation: brk-tl .7s var(--ease-out) .25s both; }
+  .reveal.in .hud-frame::after { animation: brk-br .7s var(--ease-out) .25s both; }
+  .hud-cross { animation: hud-spin-q 6s var(--ease-io) infinite; }
+}
+@keyframes hud-scan { 0% { top: 0; opacity: 0; } 8% { opacity: 1; } 92% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+@keyframes ribbon-right { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+@keyframes hud-blink { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+@keyframes brk-tl { from { transform: translate(-14px, -14px); opacity: 0; } }
+@keyframes brk-br { from { transform: translate(14px, 14px); opacity: 0; } }
+@keyframes hud-spin-q { 0%, 70% { transform: rotate(0); } 100% { transform: rotate(90deg); } }

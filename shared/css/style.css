@@ -791,3 +791,87 @@ td .badge.sb { height: auto; min-height: 26px; padding-top: 4px; padding-bottom:
 .acct-dark:checked { background: #111111; border-color: #FFE500; }
 .acct-dark:checked::after { transform: translateX(18px); background: #FFE500; }
 @media (prefers-reduced-motion: no-preference) { .acct-menu:not([hidden]) { animation: dd-in .18s var(--ease-out); } }
+
+
+/* ================= PHONE FIX PASS (2026-11-07) ================= */
+/* tab bar: the active tab gets a yellow bar on top + yellow icon/text (was a solid yellow square) */
+.tabbar a { position: relative; min-width: 56px; }
+.tabbar a.on svg { background: none !important; }
+.tabbar a.on::before { content: ""; position: absolute; top: -10px; left: 50%; width: 28px; height: 3px; margin-left: -14px; background: #FFE500; }
+:root:not([data-theme="dark"]) .tabbar a.on::before { background: #111111; }
+.tabbar .tb-count { position: absolute; top: -6px; left: calc(50% + 6px); min-width: 18px; height: 18px; padding: 0 5px; display: grid; place-items: center; background: #FFE500; color: #111111; font: 700 11px var(--font-mono); border-radius: 9px; }
+.tabbar .tb-count:empty, .tabbar .tb-count[data-zero] { display: none; }
+.show-list button { flex: none; }   /* showcase thumbnails were squashed to 14px wide on phones */
+
+@media (max-width: 760px) {
+  .tabbar { padding-bottom: env(safe-area-inset-bottom); height: calc(64px + env(safe-area-inset-bottom)); }
+  /* stacked rows: children fill the width and line up on the left (they were centred or pushed right) */
+  .row:not(.keep) { align-items: stretch !important; }
+  .page-head .row > * { width: 100%; }
+  .page-head .btn { align-self: flex-start; }
+  .page-title { font-size: 34px; }
+  /* button pairs: one per line, full width, main action on top */
+  .actions { flex-direction: column; margin-top: 24px; }
+  .actions .btn { flex: none; width: 100%; white-space: normal; }
+  .actions .btn.p { order: -1; }
+  /* roomy desktop cards get phone padding */
+  .card[style*="padding:2"], .card[style*="padding:3"], .card[style*="padding:4"] { padding: 18px !important; }
+  /* step bars fit the screen: no side scrolling */
+  .steps { width: 100%; }
+  .steps .step { width: auto !important; flex: 1 1 0; min-width: 0; font-size: 11px; gap: 6px; }
+  .steps .step b { font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+  .steps .bar { flex: 0 1 12px; min-width: 4px; margin-top: 15px; }
+  .steps .dot { width: 30px; height: 30px; font-size: 13px; }
+  div:has(> .steps) { overflow: visible !important; }
+  /* filter chips: one swipeable row instead of four wrapped rows */
+  .chips { flex-wrap: nowrap; overflow-x: auto; margin-left: -16px; margin-right: -16px; padding: 2px 16px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chips .chip { flex: none; }
+  /* tables become cards: one card per row, each value with its column name */
+  .table-wrap { overflow: visible; }
+  .table-wrap table, .table-wrap tbody, .table-wrap tr, .table-wrap td { display: block; width: 100%; }
+  .table-wrap thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .table-wrap tr { padding: 10px 2px; border-bottom: 1px solid var(--line); }
+  .table-wrap tr:last-child { border-bottom: 0; }
+  .table-wrap td { display: flex; justify-content: space-between; align-items: center; gap: 14px; border: 0 !important; padding: 5px 8px; text-align: right; background: none !important; }
+  .table-wrap td > * { text-align: right; }
+  .table-wrap td::before { content: attr(data-label); flex: none; max-width: 42%; text-align: left; font: 600 10.5px var(--font-mono); letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+  .table-wrap td[data-label=""]::before { display: none; }
+  .table-wrap td:first-child { justify-content: flex-start; text-align: left; font-size: 15px; }
+  .table-wrap td:first-child::before { display: none; }
+  .table-wrap td:first-child > * { text-align: left; }
+  .acts { flex-direction: row; flex-wrap: wrap; justify-content: flex-end; max-width: none; min-width: 0; width: 100%; }
+  .acts .btn { width: auto; flex: 1 1 140px; }
+  /* account shortcuts: 4 in one row */
+  .qa-row { display: grid !important; grid-template-columns: repeat(4, 1fr); gap: 6px !important; }
+  .qa-row .qa { font-size: 12px; }
+  .qa-row .circ.lg { width: 50px; height: 50px; }
+  /* home hero card + showcase */
+  .hud-frame.card { padding: 18px !important; }
+  .show-list button { width: 64px; height: 54px; }
+  .hud-title { letter-spacing: -1px; }
+}
+@media (max-width: 760px) {
+  /* fixes after the first phone pass: small things keep their own width inside stacked rows */
+  .row:not(.keep) > :is(.badge, .tag, .chip, .check, .small, .hud-eyebrow) { align-self: flex-start; }
+  .page-head .row > * { width: auto; }
+  .page-head > .row > * { width: 100%; }
+  .row.keep .chips { flex-wrap: wrap; margin: 0; padding: 0; overflow: visible; }
+  .steps .step b { overflow-wrap: normal; font-size: 10.5px; }
+}
+@media (max-width: 760px) {
+  /* a stacked (column) row must not wrap: wrapping made children as wide as their content (721px on Shop) */
+  .row:not(.keep) { flex-wrap: nowrap !important; }
+  .row:not(.keep) > * { min-width: 0; max-width: 100%; }
+}
+@media (max-width: 760px) {
+  .table-wrap td { justify-content: flex-end; flex-wrap: wrap; }
+  .table-wrap td::before { margin-right: auto; }
+  .table-wrap td:first-child { justify-content: flex-start; }
+}
+@media (max-width: 760px) {
+  /* nothing may be wider than the phone screen, or the phone zooms the page out and the tab bar drops below the screen (2026-11-07) */
+  .g2 > *, .g3 > *, .g4 > *, .kpis > * { min-width: 0; }
+  .g4:has(> .prow) { grid-template-columns: 1fr; }
+  .prow .art { width: 76px; height: 76px; }
+}

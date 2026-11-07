@@ -20,7 +20,7 @@
       <div class="small muted" style="margin-top:6px">${esc(me.id)} · member since ${date(me.since)} · sample account</div>
       <div class="small muted" style="margin-top:4px">${esc(me.email)}${me.phone ? " · " + esc(me.phone) : ""}</div>
       <button class="btn sm" id="edit-profile" style="margin-top:16px">${ico("edit", 16)}Edit profile</button>
-      <div class="row keep" style="gap:16px;justify-content:center;margin-top:26px;flex-wrap:wrap">
+      <div class="row keep qa-row" style="gap:16px;justify-content:center;margin-top:26px;flex-wrap:wrap">
         ${[["orders.html", "box", "My Orders"], ["sell.html", "swap", "Sell to Us"], ["trade-ins.html", "cash", "Trade-ins"]].map(([href, i, t]) => `<a class="qa" href="${href}"><span class="circ lg">${ico(i, 26)}</span>${t}</a>`).join("")}
         <button class="qa" id="logout"><span class="circ lg">${ico("logout", 26)}</span>Log out</button>
       </div>

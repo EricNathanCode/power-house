@@ -253,6 +253,18 @@
   };
   document.documentElement.dataset.theme = theme.get();
 
+  /* phones: every table turns into a stack of cards; each cell gets its column name as a label (2026-11-07) */
+  function labelTables(root = document) {
+    root.querySelectorAll("table").forEach((t) => {
+      const heads = [...t.querySelectorAll("thead th")].map((th) => th.textContent.trim());
+      if (!heads.length) return;
+      t.querySelectorAll("tbody tr").forEach((tr) => [...tr.children].forEach((td, i) => { if (!td.hasAttribute("data-label")) td.setAttribute("data-label", heads[i] || ""); }));
+    });
+  }
+  let labelQueued = false;
+  new MutationObserver(() => { if (labelQueued) return; labelQueued = true; requestAnimationFrame(() => { labelQueued = false; labelTables(); }); })
+    .observe(document.documentElement, { childList: true, subtree: true });
+
   /* ---------- store header / footer ---------- */
   const page0 = () => location.pathname.split("/").pop() || "index.html";
   /* account button (2026-11-07): initials box + name, opens a small menu */
@@ -305,8 +317,8 @@
     if (me) acctMenu(me, page0());
     const tabs = [["index.html", "home", "Home"], ["products.html", "search", "Search"], ["cart.html", "cart", "Cart"], ["orders.html", "box", "Orders"], [me ? "account.html" : "login.html", "user", "Account"]];
     const page = location.pathname.split("/").pop() || "index.html";
-    document.body.insertAdjacentHTML("beforeend", `<nav class="tabbar" aria-label="Phone menu">${tabs.map(([h, i, l]) => `<a href="${h}" class="${page === h ? "on" : ""}">${ico(i, 24)}${l}</a>`).join("")}</nav>`);
-    document.addEventListener("cart:change", () => $$("[data-cart-count]").forEach((x) => (x.textContent = PH.cart.count())));
+    document.body.insertAdjacentHTML("beforeend", `<nav class="tabbar" aria-label="Phone menu">${tabs.map(([h, i, l]) => `<a href="${h}" class="${page === h ? "on" : ""}"${page === h ? ' aria-current="page"' : ""}>${ico(i, 24)}${l}${h === "cart.html" ? `<span class="tb-count" data-cart-count>${PH.cart.count() || ""}</span>` : ""}</a>`).join("")}</nav>`);
+    document.addEventListener("cart:change", () => $$("[data-cart-count]").forEach((x) => (x.textContent = x.classList.contains("tb-count") ? PH.cart.count() || "" : PH.cart.count())));
     // header search suggestions (type to search)
     const q = $("#q");
     if (q) addEventListener("keydown", (e) => { if (e.key === "/" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { e.preventDefault(); q.focus(); } });

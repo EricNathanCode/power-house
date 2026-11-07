@@ -304,7 +304,7 @@
     }
   }
 
-  const CRED = 'Photos: Jacek Halicki, Colin, Bubba73, Sgroey (CC BY-SA 4.0, Wikimedia Commons). Sample data only.';
+  const CRED = 'Category photos: Power House group. Login photos: Jacek Halicki, Colin (CC BY-SA 4.0, Wikimedia Commons). Sample data only.';
   async function storeHeader(active = "") {
     const me = await PH.api.me();
     const a = (href, label) => `<a href="${href}" class="${active === label ? "on" : ""}">${label}</a>`;

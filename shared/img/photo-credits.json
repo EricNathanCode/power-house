@@ -21,7 +21,9 @@
   "notes": [
    "Share-alike: an altered version (recoloured, combined with other pictures) must be shared under the same licence."
   ],
-  "saved": "2026-11-03T08:10:36.337Z"
+  "saved": "2026-11-03T08:10:36.337Z",
+  "usedOnSite": true,
+  "usedFor": "motherboard.jpg: staff login page"
  },
  {
   "file": "assets/backlit-keyboard.jpg",
@@ -45,7 +47,9 @@
   "notes": [
    "Share-alike: an altered version (recoloured, combined with other pictures) must be shared under the same licence."
   ],
-  "saved": "2026-11-03T08:10:37.210Z"
+  "saved": "2026-11-03T08:10:37.210Z",
+  "usedOnSite": true,
+  "usedFor": "keyboard.jpg: store login / sign-up page"
  },
  {
   "file": "assets/hp-sff-desktop-computer-inside.jpg",
@@ -69,7 +73,9 @@
   "notes": [
    "Share-alike: an altered version (recoloured, combined with other pictures) must be shared under the same licence."
   ],
-  "saved": "2026-11-03T08:10:47.913Z"
+  "saved": "2026-11-03T08:10:47.913Z",
+  "usedOnSite": false,
+  "usedFor": "not used any more (home tiles now use the group's own photos, 2026-11-07)"
  },
  {
   "file": "assets/his-ati-radeon-x1950xtx-512mb-gddr4-graphics.jpg",
@@ -93,6 +99,68 @@
   "notes": [
    "Share-alike: an altered version (recoloured, combined with other pictures) must be shared under the same licence."
   ],
-  "saved": "2026-11-03T08:10:53.698Z"
+  "saved": "2026-11-03T08:10:53.698Z",
+  "usedOnSite": false,
+  "usedFor": "not used any more (home tiles now use the group's own photos, 2026-11-07)"
+ },
+ {
+  "file": "categories/cat-parts.jpg",
+  "media": "image",
+  "title": "PC parts (collage)",
+  "creator": "Power House group (BSIT 4-5, Group 2)",
+  "license": "Own photo",
+  "creditRequired": false,
+  "credit": "Photo: Power House group",
+  "usedOnSite": true,
+  "usedFor": "Home: PC Parts tile",
+  "notes": [
+   "Trimmed and centred on a white 7:4 canvas to fit the tile (2026-11-07). Accessories was split into two halves side by side."
+  ],
+  "saved": "2026-11-07"
+ },
+ {
+  "file": "categories/cat-accessories.jpg",
+  "media": "image",
+  "title": "Accessories: keyboard, mouse, webcam, mic",
+  "creator": "Power House group (BSIT 4-5, Group 2)",
+  "license": "Own photo",
+  "creditRequired": false,
+  "credit": "Photo: Power House group",
+  "usedOnSite": true,
+  "usedFor": "Home: Accessories tile",
+  "notes": [
+   "Trimmed and centred on a white 7:4 canvas to fit the tile (2026-11-07). Accessories was split into two halves side by side."
+  ],
+  "saved": "2026-11-07"
+ },
+ {
+  "file": "categories/cat-prebuilt.jpg",
+  "media": "image",
+  "title": "Prebuilt gaming PC",
+  "creator": "Power House group (BSIT 4-5, Group 2)",
+  "license": "Own photo",
+  "creditRequired": false,
+  "credit": "Photo: Power House group",
+  "usedOnSite": true,
+  "usedFor": "Home: Prebuilt PCs tile",
+  "notes": [
+   "Trimmed and centred on a white 7:4 canvas to fit the tile (2026-11-07). Accessories was split into two halves side by side."
+  ],
+  "saved": "2026-11-07"
+ },
+ {
+  "file": "categories/cat-sell.jpg",
+  "media": "image",
+  "title": "Inside of a desktop PC",
+  "creator": "Power House group (BSIT 4-5, Group 2)",
+  "license": "Own photo",
+  "creditRequired": false,
+  "credit": "Photo: Power House group",
+  "usedOnSite": true,
+  "usedFor": "Home: Sell to Us tile",
+  "notes": [
+   "Trimmed and centred on a white 7:4 canvas to fit the tile (2026-11-07). Accessories was split into two halves side by side."
+  ],
+  "saved": "2026-11-07"
  }
 ]

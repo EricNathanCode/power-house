@@ -81,11 +81,11 @@
     <section id="parts" class="hud-sec hud-grid" aria-label="Shop">
       <div class="reveal"><div class="hud-eyebrow">Shop by category</div><h2 class="hud-title" style="font-size:clamp(36px,4.5vw,64px)">Everything for the build.</h2></div>
       <div class="g4 reveal" style="margin-top:26px">
-        ${[["products.html?category=part", "PC Parts", "../shared/img/motherboard.jpg", `${count("part")} items`],
-           ["products.html?category=accessory", "Accessories", "../shared/img/keyboard.jpg", `${count("accessory")} items`],
-           ["products.html?category=prebuilt", "Prebuilt PCs", "../shared/img/desktop-inside.jpg", `${count("prebuilt")} builds`],
-           ["sell.html", "Sell to Us", "../shared/img/graphics-card.jpg", "Trade in your parts"]].map(([h, t, img, sub], i) => `
-          <a class="card tile" href="${h}" style="padding:0;overflow:hidden"><div class="photo cat-photo" style="height:150px;border-radius:0;background-image:url('${img}')" role="img" aria-label="${t} photo"></div>
+        ${[["products.html?category=part", "PC Parts", "../shared/img/categories/cat-parts.jpg", `${count("part")} items`],
+           ["products.html?category=accessory", "Accessories", "../shared/img/categories/cat-accessories.jpg", `${count("accessory")} items`],
+           ["products.html?category=prebuilt", "Prebuilt PCs", "../shared/img/categories/cat-prebuilt.jpg", `${count("prebuilt")} builds`],
+           ["sell.html", "Sell to Us", "../shared/img/categories/cat-sell.jpg", "Trade in your parts"]].map(([h, t, img, sub], i) => `
+          <a class="card tile" href="${h}" style="padding:0;overflow:hidden"><div class="photo cat-photo" style="background-image:url('${img}')" role="img" aria-label="${t} photo"></div>
           <div style="padding:14px 16px"><span class="mono small muted">${pad(i + 1)} //</span><div style="font:700 21px var(--font-head)">${t}</div><span class="small muted">${sub}</span></div></a>`).join("")}
       </div>
       <section class="carousel" aria-label="Popular right now">

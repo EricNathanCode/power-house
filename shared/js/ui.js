@@ -254,6 +254,41 @@
   document.documentElement.dataset.theme = theme.get();
 
   /* ---------- store header / footer ---------- */
+  const page0 = () => location.pathname.split("/").pop() || "index.html";
+  /* account button (2026-11-07): initials box + name, opens a small menu */
+  const initials = (n) => n.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+  const shortName = (n) => { const [f, l] = n.split(/\s+/); return l ? `${f} ${l[0]}.` : f; };
+  const acctButton = (me) => `<div class="acct hide-sm">
+      <button type="button" class="acct-btn" aria-expanded="false" aria-controls="acct-menu"><span class="acct-ini" aria-hidden="true">${esc(initials(me.name))}</span>
+        <span class="acct-txt"><small>Account</small><b>${esc(shortName(me.name))}</b></span>${ico("chev", 16)}</button>
+      <div class="acct-menu" id="acct-menu" hidden>
+        <div class="acct-head"><span class="acct-ini lg" aria-hidden="true">${esc(initials(me.name))}</span><div><b>${esc(me.name)}</b><small>${esc(me.email)}</small></div></div>
+        <a href="account.html" data-p="account.html">${ico("user", 18)}<span>My account</span></a>
+        <a href="orders.html" data-p="orders.html">${ico("box", 18)}<span>My orders</span><em data-n="orders"></em></a>
+        <a href="trade-ins.html" data-p="trade-ins.html">${ico("swap", 18)}<span>My trade-ins</span><em data-n="trades"></em></a>
+        <label class="acct-row">${ico("moon", 18)}<span>Dark mode</span><input type="checkbox" class="acct-dark" role="switch"></label>
+        <button type="button" class="acct-out">${ico("logout", 18)}<span>Log out</span></button>
+      </div></div>`;
+  function acctMenu(me, page) {
+    const box = $(".acct"), btn = $(".acct-btn"), menu = $("#acct-menu"), dark = $(".acct-dark");
+    menu.querySelectorAll("[data-p]").forEach((a) => { if (a.dataset.p === page) a.setAttribute("aria-current", "page"); });
+    const open = (on) => { menu.hidden = !on; btn.setAttribute("aria-expanded", on); box.classList.toggle("open", on); if (on) counts(); };
+    btn.addEventListener("click", () => open(menu.hidden));
+    document.addEventListener("click", (e) => { if (!menu.hidden && !box.contains(e.target)) open(false); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !menu.hidden) { open(false); btn.focus(); } });
+    dark.checked = theme.get() === "dark";
+    dark.addEventListener("change", () => theme.set(dark.checked ? "dark" : "light"));
+    $(".acct-out").addEventListener("click", () => { PH.session.logout(); location.href = "index.html"; });
+    let got = false;
+    async function counts() { // active orders + open trade-ins, loaded the first time the menu opens
+      if (got) return; got = true;
+      const [o, t] = await Promise.all([PH.api.myOrders(), PH.api.myTradeIns()]);
+      const set = (k, n, label) => { const el = menu.querySelector(`[data-n="${k}"]`); el.textContent = n || ""; el.title = n ? `${n} ${label}` : ""; };
+      set("orders", o.filter((x) => !["Received", "Cancelled"].includes(x.status)).length, "on the way");
+      set("trades", t.filter((x) => ["Under review", "Offer sent", "Accepted"].includes(x.status)).length, "open");
+    }
+  }
+
   const CRED = 'Photos: Jacek Halicki, Colin, Bubba73, Sgroey (CC BY-SA 4.0, Wikimedia Commons). Sample data only.';
   async function storeHeader(active = "") {
     const me = await PH.api.me();
@@ -263,11 +298,11 @@
       <nav class="links" aria-label="Main">${a("products.html?category=part", "PC Parts")}${a("products.html?category=accessory", "Accessories")}${a("products.html?category=prebuilt", "Prebuilt PCs")}${a("sell.html", "Sell to Us")}</nav>
       <form class="search" role="search" action="products.html"><label class="sr-only" for="q">Search</label>${ico("search", 18)}<input id="q" name="q" type="search" placeholder="Search parts // PCs"><kbd class="key" aria-hidden="true">/</kbd></form>
       <div class="nav-right">
-        <a href="${me ? "account.html" : "login.html"}" class="hide-sm">${ico("user")}${me ? "Hi, " + esc(me.name.split(" ")[0] + " " + (me.name.split(" ")[1] || "")) : "Log in"}</a>
-        <a href="orders.html" class="hide-sm">${ico("box")}My Orders</a>
+        ${me ? acctButton(me) : `<a href="login.html" class="hide-sm nav-login">${ico("user", 18)}Log in</a><a href="signup.html" class="hide-sm nav-signup">Sign up</a>`}
         <a href="cart.html" class="cart-btn" aria-label="Cart">${ico("cart", 18, "currentColor")}<span data-cart-count>${PH.cart.count()}</span></a>
       </div></header>`;
     document.body.insertAdjacentHTML("afterbegin", html);
+    if (me) acctMenu(me, page0());
     const tabs = [["index.html", "home", "Home"], ["products.html", "search", "Search"], ["cart.html", "cart", "Cart"], ["orders.html", "box", "Orders"], [me ? "account.html" : "login.html", "user", "Account"]];
     const page = location.pathname.split("/").pop() || "index.html";
     document.body.insertAdjacentHTML("beforeend", `<nav class="tabbar" aria-label="Phone menu">${tabs.map(([h, i, l]) => `<a href="${h}" class="${page === h ? "on" : ""}">${ico(i, 24)}${l}</a>`).join("")}</nav>`);

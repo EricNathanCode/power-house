@@ -749,3 +749,45 @@ td .badge.sb { height: auto; min-height: 26px; padding-top: 4px; padding-bottom:
 .hud-band .title-sweep { --sw: #FFFFFF; }
 :root:not([data-theme="dark"]) .page-head .title-sweep, :root:not([data-theme="dark"]) .hud-sec:not(.hud-dark):not(.hud-band) .title-sweep { --sw: #E0B800; }
 @keyframes title-sweep { from { background-position: 100% 0; } to { background-position: 0 0; } }
+
+/* ---------- Eyebrow square on the yellow Sell band: black, blinking on (black) / off (outline) so it shows on yellow ---------- */
+.hud-band .hud-eyebrow::before { background: #111111; box-shadow: 0 0 0 1px #111111; }
+@media (prefers-reduced-motion: no-preference) {
+  .hud-band .hud-eyebrow::before { animation: hud-blink-band 1.6s steps(1) infinite; }
+}
+@keyframes hud-blink-band { 0%, 100% { background: #111111; } 50% { background: transparent; } }
+
+
+/* ---------- Header account button + menu (2026-11-07) ---------- */
+.nav-login { font: 600 13px var(--font-mono) !important; text-transform: uppercase; letter-spacing: 1px; }
+.nav-signup { font: 600 13px var(--font-mono) !important; text-transform: uppercase; letter-spacing: 1px; padding: 8px 14px; border: 1.5px solid var(--ink); clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%); }
+.nav-signup:hover { background: var(--ink); color: var(--surface) !important; }
+.acct { position: relative; }
+.acct-btn { display: inline-flex; align-items: center; gap: 10px; height: 44px; padding: 0 10px 0 4px; border: 1px solid transparent; background: none; color: var(--ink); cursor: pointer; font: inherit; }
+.acct-btn:hover, .acct.open .acct-btn { border-color: var(--line-strong); background: var(--soft); }
+.acct-btn > svg { transform: rotate(90deg); transition: transform .2s var(--ease-out); color: var(--muted); }
+.acct.open .acct-btn > svg { transform: rotate(-90deg); }
+.acct-ini { width: 34px; height: 34px; display: inline-grid; place-items: center; flex: none; background: #FFE500; color: #111111; font: 700 14px var(--font-head); letter-spacing: .5px; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%); }
+:root:not([data-theme="dark"]) .acct-ini { box-shadow: inset 0 0 0 1.5px #111111; }
+.acct-ini.lg { width: 44px; height: 44px; font-size: 17px; }
+.acct-txt { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.1; }
+.acct-txt small { font: 600 10px var(--font-mono); letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+.acct-txt b { font: 700 15px var(--font-head); }
+.acct-menu { position: absolute; right: 0; top: calc(100% + 10px); width: 270px; z-index: 40; background: var(--surface); border: 1px solid var(--line-strong); box-shadow: 0 16px 40px rgba(0, 0, 0, .28); padding: 6px; white-space: normal; }
+.acct-menu::before { content: ""; position: absolute; left: -1px; right: -1px; top: -1px; height: 3px; background: #FFE500; }
+.acct-head { display: flex; gap: 12px; align-items: center; padding: 12px 10px 14px; margin-bottom: 4px; border-bottom: 1px solid var(--line); }
+.acct-head b { display: block; font: 700 16px var(--font-head); }
+.acct-head small { display: block; font: 12px var(--font-mono); color: var(--muted); word-break: break-all; }
+.acct-menu a, .acct-menu .acct-row, .acct-menu .acct-out { display: flex !important; align-items: center; gap: 12px; width: 100%; padding: 10px; border: 0; background: none; color: var(--ink); font: 600 15px var(--font-body); text-align: left; cursor: pointer; transition: box-shadow .15s var(--ease-out), background .15s ease; }
+.acct-menu a span, .acct-menu .acct-row span, .acct-menu .acct-out span { flex: 1; }
+.acct-menu a:hover, .acct-menu .acct-row:hover, .acct-menu a:focus-visible { background: var(--soft); box-shadow: inset 3px 0 0 #FFE500; }
+.acct-menu a[aria-current="page"] { box-shadow: inset 3px 0 0 #FFE500; font-weight: 800; }
+.acct-menu em { font: 600 12px var(--font-mono); font-style: normal; background: #FFE500; color: #111111; padding: 1px 7px; }
+.acct-menu em:empty { display: none; }
+.acct-menu .acct-out { border-top: 1px solid var(--line); margin-top: 4px; color: var(--danger); }
+.acct-menu .acct-out:hover { background: var(--danger-tint); }
+.acct-dark { appearance: none; -webkit-appearance: none; width: 38px; height: 20px; margin: 0; flex: none; border: 1.5px solid var(--line-strong); background: var(--soft); position: relative; cursor: pointer; transition: background .2s ease; }
+.acct-dark::after { content: ""; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; background: var(--muted); transition: transform .2s var(--ease-out), background .2s ease; }
+.acct-dark:checked { background: #111111; border-color: #FFE500; }
+.acct-dark:checked::after { transform: translateX(18px); background: #FFE500; }
+@media (prefers-reduced-motion: no-preference) { .acct-menu:not([hidden]) { animation: dd-in .18s var(--ease-out); } }

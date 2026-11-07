@@ -28,7 +28,7 @@
     }
     if (st.step === 1) return `<h3>Step 2 of 4 · Where should we deliver?</h3><div style="margin-top:20px">
         <div class="row" style="gap:20px">${field("name", "Full name", st.name, 'autocomplete="name"')}${field("phone", "Mobile number", st.phone, 'type="tel" inputmode="numeric" placeholder="09__ ___ ____" autocomplete="tel"', "11 digits, starts with 09")}</div>
-        <div class="row" style="gap:20px"><div class="grow">${field("street", "House no. and street", st.street, 'autocomplete="address-line1"')}</div><div style="width:200px">${field("zip", "ZIP code", st.zip, 'inputmode="numeric" placeholder="____"', "4 digits")}</div></div>
+        <div class="row" style="gap:20px"><div class="grow">${field("street", "House no. and street", st.street, 'autocomplete="address-line1"')}</div><div style="width:220px">${field("zip", "ZIP code", st.zip, 'inputmode="numeric" placeholder="____"', "4 digits")}</div></div>
         <div class="field" id="f-city" style="position:relative"><label for="city">City or municipality <span class="small muted" style="font-weight:600">· type to search or scroll</span></label><input id="city" value="${esc(st.city)}" placeholder="Start typing, e.g. Ind"><div class="err hidden"></div></div>
         <label class="check"><input type="checkbox" id="save" ${st.save ? "checked" : ""}> Save this address to my account</label>
         <div class="note" style="margin-top:12px">Demo uses sample data only. Don't enter real personal information.</div></div>
@@ -53,7 +53,7 @@
       <div style="max-width:760px;margin-top:14px">${steps(STEPS, st.step)}</div>
       <div class="row start stack-md" style="margin-top:22px"><section class="card grow">${body()}</section>${summary()}</div>`;
     if (st.step === 1) {
-      maskPhone($("#phone")); maskDigits($("#zip"), 4);
+      PH.ui.digitBoxes($("#phone"), [4, 3, 4], "Mobile number"); PH.ui.digitBoxes($("#zip"), [4], "ZIP code");
       typeahead($("#city"), () => PH.CITIES, () => {});
     }
   }

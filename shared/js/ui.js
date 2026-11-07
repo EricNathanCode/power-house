@@ -74,13 +74,32 @@
     if (p.lowStockLevel > 0 && p.stock <= p.lowStockLevel) return badge("low", `Only ${p.stock} left`);
     return badge("ok", "In stock");
   }
-  const statusBadge = (s) => {
-    const map = { Placed: "blue", Packing: "blue", Shipping: "blue", "Out for Delivery": "blue", Received: "ok", Cancelled: "gray",
-      "Under review": "gray", "Offer sent": "blue", Accepted: "blue", Declined: "gray", Rejected: "gray", "In stock": "ok",
-      CONFIRMED: "blue", SHIPPED: "low", DELIVERED: "ok" };
-    const label = { CONFIRMED: "Confirmed", SHIPPED: "Shipped", DELIVERED: "Delivered", Declined: "Declined by customer", Rejected: "Declined by staff", Accepted: "Offer accepted" }[s] || s;
-    const kind = { Declined: "out", Rejected: "out", Cancelled: "out", Accepted: "ok" }[s] || map[s] || "gray";
-    return badge(kind, label);
+  /* every status has its own colour + symbol (never colour alone). ctx "trade" = Sell to Us statuses */
+  const SICON = {
+    placed: '<path d="M4 1.8h8v12.4l-2-1.3-2 1.3-2-1.3-2 1.3Z"/><path d="M6.2 5.6h3.6M6.2 8.6h3.6"/>',
+    packing: '<path d="M2.4 4.9 8 2.2l5.6 2.7v6.2L8 13.8l-5.6-2.7Z"/><path d="M2.4 4.9 8 7.6l5.6-2.7M8 7.6v6.2"/>',
+    shipping: '<path d="M1.4 3.8h8.2v7.4H1.4Z"/><path d="M9.6 6.2h2.9l2.1 2.6v2.4H9.6"/><circle cx="4.3" cy="12.2" r="1.3"/><circle cx="11.6" cy="12.2" r="1.3"/>',
+    out: '<path d="M8 14.2s4.6-4.1 4.6-7.6a4.6 4.6 0 0 0-9.2 0c0 3.5 4.6 7.6 4.6 7.6Z"/><circle cx="8" cy="6.5" r="1.6"/>',
+    done: '<path d="M2.8 8.6 6.4 12 13.2 4.4"/>',
+    cancel: '<path d="M4 4l8 8M12 4l-8 8"/>',
+    review: '<circle cx="8" cy="8" r="5.8"/><path d="M8 4.8v3.4l2.2 1.4"/>',
+    offer: '<path d="M2.2 2.2h5.6l6 6-5.6 5.6-6-6Z"/><circle cx="5.3" cy="5.3" r="1"/>',
+    accepted: '<circle cx="8" cy="8" r="5.8"/><path d="M5.4 8.2 7.2 10l3.4-3.8"/>',
+    recv: '<path d="M8 1.8v7M5 6l3 3 3-3"/><path d="M2.2 9.4v4.2h11.6V9.4"/>',
+    stock: '<path d="M8 2.2 13.8 5.2 8 8.2 2.2 5.2Z"/><path d="M2.2 8.2 8 11.2l5.8-3M2.2 10.9 8 13.9l5.8-3"/>',
+    decl_c: '<circle cx="6" cy="5" r="2.4"/><path d="M1.6 13.8c0-2.6 1.9-4.3 4.4-4.3s4.4 1.7 4.4 4.3"/><path d="M11.2 5.4l3.2 3.2M14.4 5.4l-3.2 3.2"/>',
+    decl_s: '<path d="M5.5 1.8h5l3.7 3.7v5l-3.7 3.7h-5l-3.7-3.7v-5Z"/><path d="M5.3 8h5.4"/>'
+  };
+  const STATUS = {
+    Placed: ["st-placed", "placed", "Placed"], Packing: ["st-packing", "packing", "Packing"], Shipping: ["st-shipping", "shipping", "Shipping"],
+    "Out for Delivery": ["st-out", "out", "Out for delivery"], Received: ["st-done", "done", "Received"], Cancelled: ["st-bad", "cancel", "Cancelled"],
+    "Under review": ["st-review", "review", "Under review"], "Offer sent": ["st-offer", "offer", "Offer sent"], Accepted: ["st-accepted", "accepted", "Offer accepted"],
+    Declined: ["st-decl-c", "decl_c", "Declined by customer"], Rejected: ["st-bad", "decl_s", "Declined by staff"], "In stock": ["st-stock", "stock", "In stock"],
+    CONFIRMED: ["st-placed", "placed", "Confirmed"], SHIPPED: ["st-shipping", "shipping", "Shipped"], DELIVERED: ["st-done", "done", "Delivered"]
+  };
+  const statusBadge = (s, ctx) => {
+    const [cls, ic, label] = ctx === "trade" && s === "Received" ? ["st-recv", "recv", "Item received"] : STATUS[s] || ["st-review", "review", s];
+    return `<span class="badge sb ${cls}"><svg viewBox="0 0 16 16" aria-hidden="true">${SICON[ic]}</svg>${esc(label)}</span>`;
   };
 
   /* who cancelled an order: the last history entry says it */
@@ -176,6 +195,55 @@
   function maskMoney(input) {
     input.addEventListener("input", () => { const d = input.value.replace(/\D/g, "").slice(0, 7); input.value = d ? Number(d).toLocaleString("en-PH") : ""; });
   }
+
+  /* digit boxes (2026-11-07): one box per digit, grouped like 0917 · 000 · 0012. The real value lives in the original (now hidden) input */
+  function digitBoxes(input, groups = [4, 3, 4], label = "Mobile number") {
+    if (!input || input.dataset.boxes) return;
+    input.dataset.boxes = "1";
+    const total = groups.reduce((a, b) => a + b, 0);
+    input.type = "hidden";
+    const wrap = document.createElement("div");
+    wrap.className = "digits"; wrap.setAttribute("role", "group"); wrap.setAttribute("aria-label", label);
+    let n = 0;
+    wrap.innerHTML = groups.map((g, gi) => `<span class="dgroup" style="flex:${g} 1 0">${Array.from({ length: g }, () => { n++; return `<input class="dbox" inputmode="numeric" autocomplete="off" aria-label="${label}, digit ${n} of ${total}">`; }).join("")}</span>${gi < groups.length - 1 ? '<span class="dsep" aria-hidden="true">·</span>' : ""}`).join("");
+    input.after(wrap);
+    const boxes = Array.from(wrap.querySelectorAll(".dbox"));
+    const sync = () => {
+      const d = boxes.map((b) => b.value).join("");
+      let k = 0; const parts = [];
+      groups.forEach((g) => { const part = d.slice(k, k + g); k += g; if (part) parts.push(part); });
+      input.value = parts.join(" ");
+      wrap.classList.toggle("full", d.length === total);
+      boxes.forEach((b) => b.classList.toggle("on", !!b.value));
+    };
+    const fill = (str, from) => {
+      let i = from;
+      for (const c of String(str).replace(/\D/g, "")) { if (i >= total) break; boxes[i].value = c; i++; }
+      sync(); boxes[Math.min(i, total - 1)].focus();
+    };
+    boxes.forEach((b, i) => {
+      b.addEventListener("input", () => {
+        const v = b.value.replace(/\D/g, "");
+        if (v.length > 1) { b.value = ""; fill(v, i); return; }
+        b.value = v; sync();
+        if (v && i < total - 1) boxes[i + 1].focus();
+      });
+      b.addEventListener("keydown", (e) => {
+        if (e.key === "Backspace" && !b.value && i > 0) { e.preventDefault(); boxes[i - 1].value = ""; boxes[i - 1].focus(); sync(); }
+        if (e.key === "ArrowLeft" && i > 0) { e.preventDefault(); boxes[i - 1].focus(); }
+        if (e.key === "ArrowRight" && i < total - 1) { e.preventDefault(); boxes[i + 1].focus(); }
+      });
+      b.addEventListener("paste", (e) => { e.preventDefault(); fill((e.clipboardData || window.clipboardData).getData("text"), i); });
+      b.addEventListener("focus", () => b.select());
+    });
+    String(input.value || "").replace(/\D/g, "").slice(0, total).split("").forEach((c, i) => (boxes[i].value = c));
+    sync();
+    input.focus = () => (boxes.find((b) => !b.value) || boxes[total - 1]).focus(); // "focus the field" goes to the first empty box
+    const lab = document.querySelector(`label[for="${input.id}"]`);
+    if (lab) { boxes[0].id = input.id + "-box1"; lab.htmlFor = boxes[0].id; }
+    return wrap;
+  }
+
   const moneyValue = (input) => Number(String(input.value).replace(/\D/g, "")) || 0;
 
   /* theme (dark mode, UI idea 1) */
@@ -274,6 +342,6 @@
     PH.cart.add(sku, 1); toast(`Added ${p.name} to your cart`);
   });
 
-  PH.ui = { logo, needLogin, hudHead, $, $$, esc, money, date, time, when, qs, ico, art, badge, stockBadge, statusBadge, cancelledBy, steps, vsteps, donut, toast, dialog, modal, typeahead,
+  PH.ui = { digitBoxes, logo, needLogin, hudHead, $, $$, esc, money, date, time, when, qs, ico, art, badge, stockBadge, statusBadge, cancelledBy, steps, vsteps, donut, toast, dialog, modal, typeahead,
     maskPhone, maskDigits, maskMoney, moneyValue, theme, storeHeader, storeFooter, requireLogin, errorText, busy, productCard, productRow, CRED };
 })();

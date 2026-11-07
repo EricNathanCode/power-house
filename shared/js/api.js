@@ -132,6 +132,20 @@
       const c = db.customers.find((x) => x.id === id); c.address = address; save(db); return true;
     },
 
+    /* PUT /me (name, email, phone) */
+    async updateProfile({ name, email, phone }) {
+      await wait(); const id = needCustomer(); const db = load();
+      if (db.customers.some((c) => c.id !== id && c.email.toLowerCase() === String(email).toLowerCase())) throw new ApiError("EMAIL_TAKEN", "Another account already uses that email.");
+      const c = db.customers.find((x) => x.id === id); Object.assign(c, { name, email, phone }); save(db); return true;
+    },
+    /* PUT /me/password */
+    async changePassword(current, next) {
+      await wait(); const id = needCustomer(); const db = load();
+      const c = db.customers.find((x) => x.id === id);
+      if (c.password !== current) throw new ApiError("BAD_PASSWORD", "Your current password is wrong.");
+      c.password = next; save(db); return true;
+    },
+
     quote(lines) {
       const db = load();
       const items = lines.map((l) => { const p = db.products.find((x) => x.sku === l.sku); return p ? { sku: p.sku, name: p.name, price: p.price, qty: l.qty, stock: p.stock, art: p.art, condition: p.condition } : null; }).filter(Boolean);

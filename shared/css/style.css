@@ -650,3 +650,45 @@ td .badge { white-space: normal; }
 /* ---------- Logo: the bolt is yellow in light mode too (thin black edge so it reads on white) ---------- */
 .mark .bolt { fill: #FFE500; stroke: #111111; stroke-width: 1; stroke-linejoin: round; paint-order: stroke; }
 [data-theme="dark"] .mark .bolt { stroke: none; }
+
+
+/* ---------- digit boxes [ ][ ][ ][ ] ---------- */
+.digits { display: flex; align-items: center; gap: 6px; width: 100%; }
+.dgroup { display: flex; gap: 4px; min-width: 0; }
+.dbox { flex: 1 1 0; min-width: 0; width: 100%; height: 48px; padding: 0 !important; text-align: center; font: 600 18px var(--font-mono) !important; border: 1px solid var(--line-strong); border-radius: 3px; background: var(--surface); color: var(--ink); caret-color: #F5C800; }
+[data-theme="dark"] .dbox { background: #11161F; }
+.dbox.on { border-color: var(--ink); }
+.dbox:focus { outline: none; border-color: #111111; box-shadow: 0 0 0 1px #111111, inset 0 -3px 0 #FFE500; }
+[data-theme="dark"] .dbox:focus { border-color: #FFE500; box-shadow: 0 0 0 1px #FFE500, inset 0 -3px 0 #FFE500; }
+.dsep { color: var(--muted); font-weight: 800; flex-shrink: 0; }
+.field.bad .dbox { border-color: var(--danger); }
+@media (max-width: 760px) { .dbox { height: 42px; font-size: 16px !important; } .dgroup { gap: 3px; } .digits { gap: 4px; } }
+
+/* ---------- status badges v2 (D34): mono label + own line icon + colour; bar = moving, solid = needs action, dashed = waiting ---------- */
+.badge.sb { gap: 6px; height: 26px; padding: 0 10px 0 10px; border-radius: 2px; font: 600 11.5px/1 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; }
+.badge.sb svg { width: 13px; height: 13px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+td .badge.sb { height: auto; min-height: 26px; padding-top: 4px; padding-bottom: 4px; line-height: 1.25; }
+.badge.sb.st-placed { background: #F1F3F6; color: #1F2937; box-shadow: inset 3px 0 0 #6B7280; border: 1px solid transparent; }
+[data-theme="dark"] .badge.sb.st-placed { background: #1C2430; color: #D5DBE5; box-shadow: inset 3px 0 0 #8B95A5; border: 1px solid transparent; }
+.badge.sb.st-packing { background: #FFF1DC; color: #7A4300; box-shadow: inset 3px 0 0 #E8890C; border: 1px solid transparent; }
+[data-theme="dark"] .badge.sb.st-packing { background: #2E2213; color: #FFC27A; box-shadow: inset 3px 0 0 #FF9F1C; border: 1px solid transparent; }
+.badge.sb.st-shipping { background: #E3EDFF; color: #163F94; box-shadow: inset 3px 0 0 #2F6FE4; border: 1px solid transparent; }
+[data-theme="dark"] .badge.sb.st-shipping { background: #15233D; color: #9DBEFF; box-shadow: inset 3px 0 0 #4D8DFF; border: 1px solid transparent; }
+.badge.sb.st-out { background: #EEE7FF; color: #4A23A8; box-shadow: inset 3px 0 0 #7C4DFF; border: 1px solid transparent; }
+[data-theme="dark"] .badge.sb.st-out { background: #221B3D; color: #C9B6FF; box-shadow: inset 3px 0 0 #9B7BFF; border: 1px solid transparent; }
+.badge.sb.st-done { background: #DFF6E7; color: #11532F; box-shadow: inset 3px 0 0 #1F9D55; border: 1px solid transparent; }
+[data-theme="dark"] .badge.sb.st-done { background: #12301F; color: #8FE8B0; box-shadow: inset 3px 0 0 #2FC46F; border: 1px solid transparent; }
+.badge.sb.st-bad { background: #FDE7EB; color: #9E1430; box-shadow: inset 3px 0 0 #E0294A; border: 1px solid transparent; }
+[data-theme="dark"] .badge.sb.st-bad { background: #34151D; color: #FF9FB0; box-shadow: inset 3px 0 0 #FF4D6A; border: 1px solid transparent; }
+.badge.sb.st-review { background: transparent; color: #4B5563; box-shadow: none; border: 1px dashed #9AA3AF; }
+[data-theme="dark"] .badge.sb.st-review { background: transparent; color: #A9B2C0; box-shadow: none; border: 1px dashed #5E687A; }
+.badge.sb.st-offer { background: #FFE500; color: #111111; box-shadow: none; border: 1px solid #111111; }
+[data-theme="dark"] .badge.sb.st-offer { background: #FFE500; color: #111111; box-shadow: none; border: 1px solid #FFE500; }
+.badge.sb.st-accepted { background: #DFF6E7; color: #11532F; box-shadow: inset 3px 0 0 #1F9D55; border: 1px solid transparent; }
+[data-theme="dark"] .badge.sb.st-accepted { background: #12301F; color: #8FE8B0; box-shadow: inset 3px 0 0 #2FC46F; border: 1px solid transparent; }
+.badge.sb.st-recv { background: #DDF5F2; color: #0B5C53; box-shadow: inset 3px 0 0 #0E9F8E; border: 1px solid transparent; }
+[data-theme="dark"] .badge.sb.st-recv { background: #0F2E2B; color: #86E3D6; box-shadow: inset 3px 0 0 #22C3AE; border: 1px solid transparent; }
+.badge.sb.st-stock { background: #111111; color: #FFE500; box-shadow: inset 3px 0 0 #FFE500; border: 1px solid #111111; }
+[data-theme="dark"] .badge.sb.st-stock { background: #0A0E14; color: #FFE500; box-shadow: inset 3px 0 0 #FFE500; border: 1px solid #FFE500; }
+.badge.sb.st-decl-c { background: #F1F3F6; color: #9E1430; box-shadow: inset 3px 0 0 #E0294A; border: 1px solid transparent; }
+[data-theme="dark"] .badge.sb.st-decl-c { background: #1C2430; color: #FF9FB0; box-shadow: inset 3px 0 0 #FF4D6A; border: 1px solid transparent; }

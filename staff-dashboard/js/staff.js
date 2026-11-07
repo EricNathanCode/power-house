@@ -170,7 +170,7 @@
           const pct = PH.api.OFFER_PCT[t.condition];
           return `<tr><td class="nowrap"><b>${esc(t.id)}</b><div class="small muted">${date(t.createdAt)}</div></td><td class="nowrap">${esc(t.customerId)}</td><td><b class="nowrap">${esc(t.model)}</b><div class="small muted nowrap">${esc(t.type)} · ${t.photos || 0} ${t.photos === 1 ? "photo" : "photos"}</div></td>
             <td>${esc(t.condition)}</td><td>${money(t.askingPrice)}</td><td>${t.suggestedOffer ? `${money(t.suggestedOffer)} <span class="small muted">(${Math.round(pct * 100)}%)</span>` : '<span class="small muted">price by hand</span>'}</td>
-            <td>${offer}</td><td>${statusBadge(t.status)}</td><td><div class="acts">${act}</div></td></tr>`;
+            <td>${offer}</td><td>${statusBadge(t.status, "trade")}</td><td><div class="acts">${act}</div></td></tr>`;
         }).join("") || `<tr><td colspan="9" class="muted" style="text-align:center;padding:28px">No trade-ins in “${esc(st.tradeFilter)}”.</td></tr>`}
         </tbody></table></div></div>
         <p class="small muted">Flow: Under review → Offer sent → Accepted (customer) → Received → In stock (as a used item with its own SKU). Suggested offer: Like new 60%, Good 45%, Fair 30% of our retail price.</p>`);

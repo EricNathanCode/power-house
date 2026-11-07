@@ -29,7 +29,7 @@
         <p style="text-align:center" class="small muted">Staff member? <a href="../staff-dashboard/login.html">Go to the Staff Portal</a></p>`}
     </form></div>`;
 
-  if (isSignup) PH.ui.maskPhone($("#phone"));
+  if (isSignup) PH.ui.digitBoxes($("#phone"), [4, 3, 4], "Mobile number");
   const setErr = (id, msg) => { const box = $("#f-" + id); if (!box) return; box.classList.toggle("bad", !!msg); const e = box.querySelector(".err"); e.textContent = msg || ""; e.classList.toggle("hidden", !msg); };
 
   $("#form").addEventListener("submit", async (e) => {

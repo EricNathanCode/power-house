@@ -1,0 +1,279 @@
+// Power House warehouse database (D18). One database = the single source of truth (System Design).
+// Same file builds Neon (online, Plan A) and local PostgreSQL 18 (offline, Plan B).
+// Money is stored in WHOLE PESOS (Int). Times are stored with time zone (UTC inside, shown as PH time).
+// SAMPLE DATA ONLY: no real customers.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // pooled address: the running API
+  directUrl = env("DIRECT_URL") // direct address: migrations
+}
+
+// ---------- lists of allowed values ----------
+enum Category {
+  part
+  accessory
+  prebuilt
+}
+
+enum ProductCondition {
+  new
+  used
+}
+
+enum OrderStatus {
+  PLACED
+  PACKING
+  SHIPPING
+  OUT_FOR_DELIVERY
+  RECEIVED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  COD
+  GCASH_SIM // GCash, SIMULATED (D8)
+}
+
+enum MovementReason {
+  sale // order placed: stock goes down
+  cancel // order cancelled: stock comes back
+  supplier // supplier delivery (SIMULATED supplier)
+  tradeIn // used item bought from a customer (Sell to Us)
+  restock // staff added stock by hand
+}
+
+enum PoStatus {
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+}
+
+enum TradeInCondition {
+  LIKE_NEW
+  GOOD
+  FAIR
+}
+
+enum TradeInStatus {
+  UNDER_REVIEW
+  OFFER_SENT
+  ACCEPTED // customer accepted the offer
+  DECLINED // customer declined the offer
+  REJECTED // staff declined the item
+  RECEIVED // item handed over
+  IN_STOCK // added to stock as a used product
+}
+
+// ---------- warehouse ----------
+model Product {
+  sku           String           @id // e.g. "GPU-8GB"
+  name          String
+  category      Category
+  type          String // e.g. "GPU", "Keyboard", "Gaming PC"
+  price         Int // whole pesos
+  stock         Int              @default(0)
+  lowStockLevel Int              @default(0) // each product has its own low-stock level (D7)
+  condition     ProductCondition @default(new)
+  art           String           @default("box") // which drawing the website shows
+  specs         Json             @default("{}")
+  createdAt     DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime         @updatedAt @db.Timestamptz(3)
+
+  orderItems      OrderItem[]
+  movements       StockMovement[]
+  supplierProduct SupplierProduct?
+  purchaseOrders  PurchaseOrder[]
+  fromTradeIns    TradeIn[]
+
+  @@index([category])
+  @@map("products")
+}
+
+model StockMovement {
+  id      String         @id // e.g. "MOV-0012"
+  sku     String
+  change  Int // +20 delivered, -2 sold
+  reason  MovementReason
+  refId   String? // the order, PO or trade-in that caused it
+  at      DateTime       @default(now()) @db.Timestamptz(3)
+  product Product        @relation(fields: [sku], references: [sku])
+
+  @@index([sku])
+  @@index([at])
+  @@map("stock_movements")
+}
+
+// ---------- people ----------
+model Customer {
+  id           String   @id // e.g. "CUST-001"
+  name         String
+  email        String   @unique
+  passwordHash String // bcrypt hash, never the plain password (D9)
+  phone        String   @default("")
+  street       String?
+  city         String?
+  zip          String?
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+
+  orders   Order[]
+  tradeIns TradeIn[]
+
+  @@map("customers")
+}
+
+model Staff {
+  username     String   @id // e.g. "staff01"
+  name         String
+  passwordHash String
+  role         String   @default("warehouse")
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+
+  purchaseOrders PurchaseOrder[]
+
+  @@map("staff")
+}
+
+// ---------- orders ----------
+model Order {
+  id            String        @id // e.g. "ORD-0008"
+  customerId    String
+  shipping      Int // whole pesos
+  total         Int // whole pesos, items + shipping
+  paymentMethod PaymentMethod
+  paymentRef    String? // SIMULATED GCash reference
+  status        OrderStatus   @default(PLACED)
+  address       String // delivery address at the time of the order
+  createdAt     DateTime      @default(now()) @db.Timestamptz(3)
+
+  customer Customer       @relation(fields: [customerId], references: [id])
+  items    OrderItem[]
+  history  OrderHistory[]
+
+  @@index([customerId])
+  @@index([status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id      Int     @id @default(autoincrement())
+  orderId String
+  sku     String
+  name    String // product name when ordered
+  qty     Int
+  price   Int // unit price when ordered (whole pesos)
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [sku], references: [sku])
+
+  @@unique([orderId, sku])
+  @@map("order_items")
+}
+
+model OrderHistory {
+  id      Int         @id @default(autoincrement())
+  orderId String
+  status  OrderStatus
+  at      DateTime    @default(now()) @db.Timestamptz(3)
+  by      String // "CUST-001" (customer) or "staff01" (staff)
+  order   Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("order_history")
+}
+
+// ---------- supplier (the bulk supplier is SIMULATED / fictional) ----------
+model SupplierProduct {
+  supplierSku String  @id // the supplier's code, e.g. "GB-GPU-8G"
+  sku         String  @unique // our code: supplier SKU <-> our SKU is the data mapping (Module 1)
+  unitPrice   Int
+  minOrderQty Int
+  product     Product @relation(fields: [sku], references: [sku])
+
+  @@map("supplier_products")
+}
+
+model PurchaseOrder {
+  poNumber    String    @id // e.g. "PO-0004"
+  sku         String
+  supplierSku String
+  qty         Int
+  unitPrice   Int
+  status      PoStatus  @default(CONFIRMED)
+  approvedBy  String
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  shippedAt   DateTime? @db.Timestamptz(3)
+  deliveredAt DateTime? @db.Timestamptz(3)
+  product     Product   @relation(fields: [sku], references: [sku])
+  staff       Staff     @relation(fields: [approvedBy], references: [username])
+
+  @@index([status])
+  @@map("purchase_orders")
+}
+
+// ---------- Sell to Us / trade-ins (D11, D13) ----------
+model TradeIn {
+  id             String           @id // e.g. "TRD-0009"
+  customerId     String
+  category       Category
+  type           String // e.g. "Graphics card (GPU)"
+  brand          String
+  model          String
+  condition      TradeInCondition
+  askingPrice    Int
+  suggestedOffer Int? // 60 / 45 / 30% of our price by condition
+  offer          Int? // what staff offered
+  photos         Int              @default(0)
+  status         TradeInStatus    @default(UNDER_REVIEW)
+  note           String? // reason when staff decline
+  stockSku       String? // the used product it became
+  createdAt      DateTime         @default(now()) @db.Timestamptz(3)
+
+  customer     Customer         @relation(fields: [customerId], references: [id])
+  stockProduct Product?         @relation(fields: [stockSku], references: [sku])
+  history      TradeInHistory[]
+
+  @@index([customerId])
+  @@index([status])
+  @@map("trade_ins")
+}
+
+model TradeInHistory {
+  id        Int      @id @default(autoincrement())
+  tradeInId String
+  status    String // "Submitted", "Offer sent", ... as shown to people
+  at        DateTime @default(now()) @db.Timestamptz(3)
+  tradeIn   TradeIn  @relation(fields: [tradeInId], references: [id], onDelete: Cascade)
+
+  @@index([tradeInId])
+  @@map("trade_in_history")
+}
+
+// ---------- small helpers ----------
+model Setting {
+  key   String @id // "supplierOnline", "supplierName"
+  value Json
+
+  @@map("settings")
+}
+
+// next number for each readable ID (ORD-0008, TRD-0009 ...), bumped inside the same transaction
+model IdCounter {
+  prefix String @id // "ORD", "TRD", "PO", "MOV", "CUST"
+  last   Int
+
+  @@map("id_counters")
+}
+
+// login sessions (express-session + connect-pg-simple). Same layout that library expects.
+model Session {
+  sid    String   @id @db.VarChar
+  sess   Json     @db.Json
+  expire DateTime @db.Timestamp(6)
+
+  @@index([expire], map: "IDX_session_expire")
+  @@map("session")
+}

@@ -331,8 +331,17 @@
   }
   function storeFooter() {
     document.body.insertAdjacentHTML("beforeend", `<footer class="foot"><b>Power House</b><span>${CRED}</span><span>COD · GCash (SIMULATED) · <a href="../staff-dashboard/login.html">Staff Portal</a> · <button type="button" data-reset>Reset demo data</button></span></footer>`);
-    $("[data-reset]").onclick = async () => { if (await dialog({ title: "Reset demo data?", body: "Orders, stock, trade-ins and your cart go back to the sample data. Logins stay.", confirm: "Reset demo data", cancel: "Keep my data", icon: "refresh" })) { PH.api.resetDemo(); location.reload(); } };
+    $("[data-reset]").onclick = async () => {
+      if (!(await dialog({ title: "Reset demo data?", body: "Orders, stock, trade-ins and your cart go back to the sample data on the server. Logins stay.", confirm: "Reset demo data", cancel: "Keep my data", icon: "refresh" }))) return;
+      try { await PH.api.resetDemo(); location.reload(); } catch (e) { toast(errorText(e), true); }
+    };
   }
+
+  /* the API server can't be reached: say so once, clearly, instead of half-empty pages */
+  document.addEventListener("ph:offline", () => {
+    if (document.querySelector(".offline-bar")) return;
+    document.body.insertAdjacentHTML("afterbegin", `<div class="offline-bar" role="alert">${ico("alert", 18)}<span><b>Can't reach the Power House server.</b> Start it with <code>npm start</code> in the <code>warehouse-api</code> folder, then reload this page.</span><button type="button" class="btn xs" onclick="location.reload()">Reload</button></div>`);
+  });
   function requireLogin() {
     if (!PH.session.customerId()) { location.href = "login.html?next=" + encodeURIComponent(location.pathname.split("/").pop() + location.search); return false; }
     return true;

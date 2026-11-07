@@ -1,11 +1,18 @@
 # power-house
 Power House: PC hardware online store + warehouse REST API. ITEC 116 final project (BSIT 4-5, Group 2). Sample data only; supplier and GCash are simulated.
 
-## What's here now: frontend only (HTML, CSS, JavaScript)
-There is no backend yet. `shared/js/api.js` is a **mock warehouse API** that keeps the data in the browser (localStorage), so every page works and the rules can be tested today. Later, each function in `api.js` gets replaced by a `fetch()` to the real Node + Express API; the endpoint is written above each function.
+## What's here now: website + warehouse REST API + database
+- **Website** (plain HTML, CSS, JavaScript): the customer store and the Staff Portal
+- **Warehouse API** (`warehouse-api/`, Node.js + Express + Prisma): every rule is checked on the server
+- **Database**: PostgreSQL on **Neon** (online, Plan A) or local PostgreSQL 18 (offline, Plan B). Same tables and sample data in both
+- The website talks to the API through `shared/js/api.js` (fetch). It has **no database of its own**
 
 ```
 power-house/
+├── warehouse-api/        REST API + database (see warehouse-api/README.md)
+│   ├── src/              Express app: routes, rules, logins
+│   ├── prisma/           schema.prisma (tables), migrations, seed (sample data)
+│   └── tests/            18 automatic end-to-end tests
 ├── store-web/            customer store (12 pages)
 │   ├── index.html        Home
 │   ├── products.html     Category / search (chips, filters, sort)
@@ -23,28 +30,31 @@ power-house/
 │   └── index.html        tabs: Overview · Orders · Inventory · Low stock · Reorders · Trade-ins · Stock log
 └── shared/
     ├── css/style.css     neumorphism + blue palette, light and dark
-    ├── js/data.js        sample data (products, customers, orders, trade-ins, supplier catalog)
-    ├── js/api.js         MOCK warehouse API (swap for fetch() later)
+    ├── js/data.js        sample data (the database seed reads this file too) + city / part-type lists
+    ├── js/api.js         talks to the warehouse API with fetch()
     ├── js/ui.js          header, footer, icons, badges, dialogs, input masks
     └── img/              4 photos (CC BY-SA 4.0, credits in photo-credits.json)
 ```
 
 ## How to run
-1. Open the folder in **VS Code**.
-2. Install the **Live Server** extension, right-click `store-web/index.html` → **Open with Live Server**.
-   (Or run `python -m http.server 5500` in this folder and open http://localhost:5500/store-web/index.html.)
-3. Use a local server rather than double-clicking the file, so every page shares the same saved data.
+**First time** (needs Node.js LTS):
+1. Open the folder in **VS Code** → Terminal → `cd warehouse-api` → `npm install`
+2. Copy `warehouse-api/.env.example` to `warehouse-api/.env` and paste the Neon addresses (ask the leader, privately)
+3. `npm run db:check` → both lines say OK
 
-### Page links (after you start Live Server or the python server)
+**Every time:** in `warehouse-api` run **`npm start`**, then open **http://localhost:4000** (store and Staff Portal are served by the same server). Stop with Ctrl + C.
+If the site says *"Can't reach the Power House server"*, the API isn't running.
+
+### Page links (after `npm start`)
 | Part | Open this | Code |
 |---|---|---|
-| 🛒 Store (customer) | http://localhost:5500/store-web/index.html | [store-web/index.html](store-web/index.html) |
-| 🔑 Customer log in | http://localhost:5500/store-web/login.html | [store-web/login.html](store-web/login.html) |
-| 🔑 Customer sign up | http://localhost:5500/store-web/signup.html | [store-web/signup.html](store-web/signup.html) |
-| 💰 Sell to Us | http://localhost:5500/store-web/sell.html | [store-web/sell.html](store-web/sell.html) |
-| 💰 My trade-ins (offer status) | http://localhost:5500/store-web/trade-ins.html | [store-web/trade-ins.html](store-web/trade-ins.html) |
-| 🏭 Staff Portal (log in) | http://localhost:5500/staff-dashboard/login.html | [staff-dashboard/login.html](staff-dashboard/login.html) |
-| 🏭 Staff dashboard (after login) | http://localhost:5500/staff-dashboard/index.html | [staff-dashboard/index.html](staff-dashboard/index.html) |
+| 🛒 Store (customer) | http://localhost:4000/store-web/index.html | [store-web/index.html](store-web/index.html) |
+| 🔑 Customer log in | http://localhost:4000/store-web/login.html | [store-web/login.html](store-web/login.html) |
+| 🔑 Customer sign up | http://localhost:4000/store-web/signup.html | [store-web/signup.html](store-web/signup.html) |
+| 💰 Sell to Us | http://localhost:4000/store-web/sell.html | [store-web/sell.html](store-web/sell.html) |
+| 💰 My trade-ins (offer status) | http://localhost:4000/store-web/trade-ins.html | [store-web/trade-ins.html](store-web/trade-ins.html) |
+| 🏭 Staff Portal (log in) | http://localhost:4000/staff-dashboard/login.html | [staff-dashboard/login.html](staff-dashboard/login.html) |
+| 🏭 Staff dashboard (after login) | http://localhost:4000/staff-dashboard/index.html | [staff-dashboard/index.html](staff-dashboard/index.html) |
 
 Staff dashboard tabs open directly too, e.g. `…/staff-dashboard/index.html#trade-ins` (Sell to Us reviews), `#inventory`, `#low-stock`, `#stock-log`.
 
@@ -53,7 +63,7 @@ Staff dashboard tabs open directly too, e.g. `…/staff-dashboard/index.html#tra
 | Customer | `test1@example.com` / `sample123` |
 | Staff | `staff01` / `staff123` |
 
-**Reset demo data:** the link in the store footer, or the button in Staff → Overview.
+**Reset demo data:** the link in the store footer, the button in Staff → Overview, or `npm run db:seed` in `warehouse-api` (all put the sample data back in the database).
 
 ## Sample data: one of each status (so you can see approve and decline)
 | Record | Status now | Try this | You should see |
@@ -74,7 +84,7 @@ Staff dashboard tabs open directly too, e.g. `…/staff-dashboard/index.html#tra
 
 Customer `test1@example.com` owns ORD-0001/0002/0004/0005/0006 and TRD-0001/0003/0004/0006/0007. Staff → Trade-ins has filter chips (To review, Waiting for customer, To receive, To add to stock, Done, Declined).
 
-## Rules the mock API already follows
+## Rules the API enforces on the server
 - Stock goes down the moment an order is placed; check + save + deduct happen together, all or nothing (D6)
 - Cancel only before Shipping; cancelling puts the stock back (D5)
 - Each product has its own low-stock level; suggested reorder = max(supplier minimum, 3 × low level − stock), staff approve (D7, D10)
@@ -90,6 +100,7 @@ Customer `test1@example.com` owns ORD-0001/0002/0004/0005/0006 and TRD-0001/0003
 - **Missing part:** Staff → Reorders → switch the supplier off → Low stock → Approve reorder → "Supplier unavailable (simulated)"
 
 ## Team rules
-- Never commit passwords or `.env` (already in `.gitignore`)
+- Never commit passwords or `.env` (already in `.gitignore`); share the Neon addresses privately
+- Don't run `npm test` during the demo: the tests reset the data
 - Use sample data only; label anything mocked as SIMULATED
 - One GitHub Issue per task; work on a branch, then open a pull request

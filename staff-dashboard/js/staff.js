@@ -277,7 +277,7 @@
     if (d.tostock) { const v = Number($(`#r-${d.tostock}`).value); run(async () => { const r = await PH.api.addTradeInToStock(d.tostock, v); toast(`Added to stock as ${r.sku}`); }); }
     if (d.reason) { st.logReason = d.reason; refresh(); }
     if (d.tfilter) { st.tradeFilter = d.tfilter; refresh(); }
-    if (t.id === "reset") { if (await dialog({ title: "Reset demo data?", body: "Orders, stock, trade-ins and purchase orders go back to the sample data.", confirm: "Reset demo data", cancel: "Keep my data", icon: "refresh" })) { PH.api.resetDemo(); toast("Demo data reset"); refresh(); } }
+    if (t.id === "reset") { if (await dialog({ title: "Reset demo data?", body: "Orders, stock, trade-ins and purchase orders go back to the sample data.", confirm: "Reset demo data", cancel: "Keep my data", icon: "refresh" })) { try { await PH.api.resetDemo(); toast("Demo data reset"); refresh(); } catch (x) { toast(errorText(x), true); } } }
   });
   $("#app").addEventListener("input", (e) => {
     if (e.target.id === "oq") { st.orderQ = e.target.value; clearTimeout(e.target._t); e.target._t = setTimeout(async () => { await refresh(); const i = $("#oq"); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }, 250); }

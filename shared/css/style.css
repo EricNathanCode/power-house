@@ -875,3 +875,9 @@ td .badge.sb { height: auto; min-height: 26px; padding-top: 4px; padding-bottom:
   .g4:has(> .prow) { grid-template-columns: 1fr; }
   .prow .art { width: 76px; height: 76px; }
 }
+
+/* ---------- API server not reachable (2026-11-07) ---------- */
+.offline-bar { position: sticky; top: 0; z-index: 60; display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: #FFE500; color: #111111; font-size: 14px; border-bottom: 2px solid #111111; }
+.offline-bar span { flex: 1; }
+.offline-bar code { font: 600 12.5px var(--font-mono); background: rgba(17, 17, 17, .1); padding: 1px 5px; }
+.offline-bar .btn { background: #111111; color: #FFE500; border-color: #111111; }

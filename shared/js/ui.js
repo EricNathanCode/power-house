@@ -314,12 +314,12 @@
     return `<article class="card pcard"><a href="product.html?sku=${encodeURIComponent(p.sku)}" class="art" aria-label="${esc(p.name)}">${art(p.art, p.name)}</a>
       <div class="body"><div>${stockBadge(p)}</div><a class="name" href="product.html?sku=${encodeURIComponent(p.sku)}">${esc(p.name)}</a>
       <div class="price">${money(p.price)}</div><div class="small muted" style="margin-bottom:12px">${out ? "0 in stock" : `${p.stock} in stock`}</div>
-      ${out ? `<button class="btn sm block" disabled>Out of stock</button>` : `<button class="btn p sm block" data-add="${esc(p.sku)}">${ico("cart", 18, "currentColor")}Add to cart</button>`}</div></article>`;
+      ${out ? `<button class="btn sm block" disabled>Out of stock</button>` : `<button class="btn p sm block" data-add="${esc(p.sku)}" title="Press and hold to add">${ico("cart", 18, "currentColor")}Add to cart</button>`}</div></article>`;
   }
   function productRow(p) {
     return `<div class="card prow"><a class="art" href="product.html?sku=${encodeURIComponent(p.sku)}" aria-label="${esc(p.name)}">${art(p.art, p.name)}</a>
       <div class="grow">${stockBadge(p)}<div style="font-weight:700;margin-top:6px;line-height:1.25">${esc(p.name)}</div><div class="price" style="font-size:19px">${money(p.price)}</div>
-      ${p.stock > 0 ? `<button class="btn xs o" data-add="${esc(p.sku)}" style="margin-top:4px">${ico("plus", 16)}Add to cart</button>` : `<span class="small muted">Out of stock</span>`}</div></div>`;
+      ${p.stock > 0 ? `<button class="btn xs o" data-add="${esc(p.sku)}" title="Press and hold to add" style="margin-top:4px">${ico("plus", 16)}Add to cart</button>` : `<span class="small muted">Out of stock</span>`}</div></div>`;
   }
   // one listener for every "Add to cart" button on the page
   /* the cart needs an account: ask to log in, then come back to this page */
@@ -330,18 +330,54 @@
     if (ok) location.href = "login.html?next=" + encodeURIComponent(back);
     return true;
   }
+  /* press and hold to add to cart (D36): a yellow fill runs left to right; let go early and nothing is added.
+     Works with mouse, touch and keyboard (hold Enter or Space). When it finishes the button fires "hold:done". */
+  const HOLD_MS = 650, HOLD_SEL = "[data-add], [data-hold]";
+  let held = null, hintAt = 0;
+  function holdStart(b) {
+    if (b.disabled || held || b.classList.contains("added")) return;
+    if (!PH.session.customerId()) return; // logged out: the click opens the log-in dialog instead
+    b.style.setProperty("--hold", HOLD_MS + "ms");
+    b.classList.add("holding");
+    held = { b, t: setTimeout(() => { held = null; b.classList.remove("holding"); b.classList.add("added"); if (navigator.vibrate) navigator.vibrate(12); b.dispatchEvent(new CustomEvent("hold:done", { bubbles: true })); }, HOLD_MS) };
+  }
+  function holdStop(b, hint) {
+    if (!held || held.b !== b) return;
+    clearTimeout(held.t); held = null; b.classList.remove("holding");
+    if (hint && Date.now() - hintAt > 2500) { hintAt = Date.now(); toast("Press and hold the button to add it to your cart"); }
+  }
+  /* after a hold: show "Added" for a moment (ok) or snap back right away (failed) */
+  function holdResult(b, ok) {
+    if (!ok) { b.classList.remove("added"); return; }
+    const html = b.innerHTML;
+    b.innerHTML = `${ico("check", 18)}Added`;
+    setTimeout(() => { b.innerHTML = html; b.classList.remove("added"); }, 1300);
+  }
+  document.addEventListener("pointerdown", (e) => { const b = e.target.closest(HOLD_SEL); if (b && (e.pointerType !== "mouse" || e.button === 0)) holdStart(b); });
+  document.addEventListener("pointerup", (e) => { const b = e.target.closest(HOLD_SEL); if (b) holdStop(b, true); });
+  document.addEventListener("pointerout", (e) => { const b = e.target.closest(HOLD_SEL); if (b && !b.contains(e.relatedTarget)) holdStop(b, false); });
+  document.addEventListener("pointercancel", (e) => { const b = e.target.closest(HOLD_SEL); if (b) holdStop(b, false); }); // e.g. the finger starts scrolling
+  document.addEventListener("contextmenu", (e) => { if (e.target.closest(HOLD_SEL)) e.preventDefault(); }); // no long-press menu on phones
+  document.addEventListener("keydown", (e) => { const b = e.target.closest && e.target.closest(HOLD_SEL); if (!b || (e.key !== "Enter" && e.key !== " ")) return; if (!PH.session.customerId()) return; e.preventDefault(); if (!e.repeat) holdStart(b); });
+  document.addEventListener("keyup", (e) => { const b = e.target.closest && e.target.closest(HOLD_SEL); if (!b || (e.key !== "Enter" && e.key !== " ")) return; if (!PH.session.customerId()) return; e.preventDefault(); holdStop(b, true); });
+  addEventListener("blur", () => held && holdStop(held.b, false));
+
   document.addEventListener("click", async (e) => {
     const c = e.target.closest("a.cart-btn, .tabbar a[href='cart.html']");
     if (c && !PH.session.customerId()) { e.preventDefault(); needLogin("cart.html"); return; }
-    const b = e.target.closest("[data-add]"); if (!b) return;
-    if (await needLogin()) return;
+    const b = e.target.closest(HOLD_SEL); if (!b) return;
+    e.preventDefault();
+    needLogin(); // logged out: explain why. Logged in: adding happens on hold, not on click
+  });
+  document.addEventListener("hold:done", async (e) => {
+    const b = e.target; if (!b.matches("[data-add]")) return;
     const sku = b.dataset.add;
     const p = await PH.api.getProduct(sku);
     const inCart = (PH.cart.get().find((x) => x.sku === sku) || {}).qty || 0;
-    if (inCart + 1 > p.stock) { toast(`Only ${p.stock} in stock, and they're all in your cart.`, true); return; }
-    PH.cart.add(sku, 1); toast(`Added ${p.name} to your cart`);
+    if (inCart + 1 > p.stock) { holdResult(b, false); toast(`Only ${p.stock} in stock, and they're all in your cart.`, true); return; }
+    PH.cart.add(sku, 1); holdResult(b, true); toast(`Added ${p.name} to your cart`);
   });
 
-  PH.ui = { digitBoxes, logo, needLogin, hudHead, $, $$, esc, money, date, time, when, qs, ico, art, badge, stockBadge, statusBadge, cancelledBy, steps, vsteps, donut, toast, dialog, modal, typeahead,
+  PH.ui = { holdResult, digitBoxes, logo, needLogin, hudHead, $, $$, esc, money, date, time, when, qs, ico, art, badge, stockBadge, statusBadge, cancelledBy, steps, vsteps, donut, toast, dialog, modal, typeahead,
     maskPhone, maskDigits, maskMoney, moneyValue, theme, storeHeader, storeFooter, requireLogin, errorText, busy, productCard, productRow, CRED };
 })();

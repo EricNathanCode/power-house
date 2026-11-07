@@ -24,7 +24,7 @@
         <div class="price" style="font-size:40px;margin:14px 0">${money(p.price)}</div>
         <div class="field" style="margin-bottom:0"><span class="lab">Quantity</span>
           <div class="row keep center" style="gap:12px"><button class="btn icon" id="minus" aria-label="Less">${ico("minus")}</button><b id="qty" style="min-width:28px;text-align:center;font-size:20px">${qty}</b><button class="btn icon" id="plus" aria-label="More">${ico("plus")}</button><span class="small muted" id="qtyhelp"></span></div></div>
-        <div class="actions"><button class="btn p grow" id="add">${ico("cart", 18, "currentColor")}Add to cart</button><button class="btn" id="buy">Buy now</button></div>
+        <div class="actions"><button class="btn p grow" id="add" data-hold title="Press and hold to add">${ico("cart", 18, "currentColor")}Add to cart</button><button class="btn" id="buy">Buy now</button></div>
         <div class="card" style="margin-top:28px"><h3>Specs</h3>${Object.entries(p.specs || {}).map(([k, v]) => `<div class="leader"><b>${esc(k)}</b><span class="fill"></span><span>${esc(v)}</span></div>`).join("") || '<p class="muted">No specs yet.</p>'}</div>
         <div class="small muted" style="margin-top:14px">${ico("bolt", 16)} Stock is checked again when you place the order, so two people can't buy the last one.</div>
       </div>
@@ -43,7 +43,8 @@
   }
   $("#minus").onclick = () => { qty--; sync(); };
   $("#plus").onclick = () => { qty++; sync(); };
-  $("#add").onclick = async () => { if (await PH.ui.needLogin()) return; PH.cart.add(p.sku, qty); toast(`Added ${qty} × ${p.name} to your cart`); qty = 1; sync(); };
+  // press and hold (D36); a plain click while logged out opens the log-in dialog (shared handler in ui.js)
+  $("#add").addEventListener("hold:done", () => { PH.cart.add(p.sku, qty); PH.ui.holdResult($("#add"), true); toast(`Added ${qty} × ${p.name} to your cart`); qty = 1; sync(); });
   $("#buy").onclick = async () => { if (await PH.ui.needLogin()) return; PH.cart.add(p.sku, qty); location.href = "cart.html"; };
   document.addEventListener("cart:change", sync);
   sync();

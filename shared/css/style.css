@@ -728,3 +728,24 @@ td .badge.sb { height: auto; min-height: 26px; padding-top: 4px; padding-bottom:
 @keyframes brk-tl { from { transform: translate(-14px, -14px); opacity: 0; } }
 @keyframes brk-br { from { transform: translate(14px, 14px); opacity: 0; } }
 @keyframes hud-spin-q { 0%, 70% { transform: rotate(0); } 100% { transform: rotate(90deg); } }
+
+
+/* ---------- Press and hold to add to cart (D36, 2026-11-07) ---------- */
+.btn[data-add], .btn[data-hold] { position: relative; isolation: isolate; overflow: hidden; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation; }
+.btn[data-add]::before, .btn[data-hold]::before { content: ""; position: absolute; inset: 0; z-index: -1; background: #FFE500; transform: scaleX(0); transform-origin: left center; transition: transform .22s var(--ease-out); }
+.btn.holding::before { transform: scaleX(1); transition: transform var(--hold, 650ms) linear; }
+.btn.added::before { transform: scaleX(1); transition: none; }
+/* the button turns light on hover / press so the yellow fill can be seen running across it */
+.btn.p[data-add], .btn.p[data-hold] { background-image: linear-gradient(#E4E7EC, #E4E7EC); }
+.btn.p[data-add]:hover:not(:disabled), .btn.p[data-hold]:hover:not(:disabled) { background-image: linear-gradient(#E4E7EC, #E4E7EC); color: #111111; }
+.btn[data-add].holding, .btn[data-hold].holding, .btn[data-add].added, .btn[data-hold].added { background-image: linear-gradient(#E4E7EC, #E4E7EC); background-size: 100% 100%; color: #111111; transform: scale(.98); }
+.btn[data-add].added, .btn[data-hold].added { transform: none; }
+
+
+/* ---------- Title sweep (D35 update): yellow colour runs through the letters left to right, then fades away ---------- */
+.title-sweep { --sw: #FFE500; background-image: linear-gradient(90deg, var(--tc) 0%, var(--tc) 38%, var(--sw) 47%, var(--sw) 53%, var(--tc) 62%, var(--tc) 100%);
+  background-size: 300% 100%; background-position: 100% 0; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  animation: title-sweep 1.2s var(--ease-io) both; }
+.hud-band .title-sweep { --sw: #FFFFFF; }
+:root:not([data-theme="dark"]) .page-head .title-sweep, :root:not([data-theme="dark"]) .hud-sec:not(.hud-dark):not(.hud-band) .title-sweep { --sw: #E0B800; }
+@keyframes title-sweep { from { background-position: 100% 0; } to { background-position: 0 0; } }

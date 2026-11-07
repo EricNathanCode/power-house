@@ -58,7 +58,7 @@
             <div class="art" style="height:230px;background:transparent;margin:6px 0">${art(pc.art, pc.name)}</div>
             <div class="row keep between" style="align-items:flex-end;gap:12px"><h2 class="bracket" style="margin:0">${esc(pc.name)}</h2><div class="price" style="font-size:32px">${money(pc.price)}</div></div>
             ${specs(pc, 4)}
-            <div class="actions" style="margin-top:18px">${pc.stock > 0 ? `<button class="btn p grow" data-add="${pc.sku}">${ico("cart", 18)}Add build to cart</button>` : `<button class="btn grow" disabled>Out of stock</button>`}<a class="btn" href="product.html?sku=${encodeURIComponent(pc.sku)}">Details</a></div>
+            <div class="actions" style="margin-top:18px">${pc.stock > 0 ? `<button class="btn p grow" data-add="${pc.sku}" title="Press and hold to add">${ico("cart", 18)}Add build to cart</button>` : `<button class="btn grow" disabled>Out of stock</button>`}<a class="btn" href="product.html?sku=${encodeURIComponent(pc.sku)}">Details</a></div>
           </div>
         </div>
       </div>
@@ -132,7 +132,7 @@
         <div class="row keep wrapflex" style="gap:8px"><span class="tag"><b>Category</b><span>${CAT[p.category]}</span></span><span class="tag"><b>Type</b><span>${esc(p.type)}</span></span></div>
         <div class="row keep center" style="gap:14px;margin:16px 0 6px"><div class="price" style="font-size:36px">${money(p.price)}</div>${stockBadge(p)}</div>
         ${specs(p, 4)}
-        <div class="actions" style="margin-top:20px">${p.stock > 0 ? `<button class="btn p grow" data-add="${p.sku}">${ico("cart", 18)}Add to cart</button>` : `<button class="btn grow" disabled>Out of stock</button>`}<a class="btn" href="product.html?sku=${encodeURIComponent(p.sku)}">Details</a></div>`;
+        <div class="actions" style="margin-top:20px">${p.stock > 0 ? `<button class="btn p grow" data-add="${p.sku}" title="Press and hold to add">${ico("cart", 18)}Add to cart</button>` : `<button class="btn grow" disabled>Out of stock</button>`}<a class="btn" href="product.html?sku=${encodeURIComponent(p.sku)}">Details</a></div>`;
       $("#show-count").textContent = `${pad(i + 1)} / ${pad(showList.length)}`;
       $("#ghost-show").textContent = p.type;
     };

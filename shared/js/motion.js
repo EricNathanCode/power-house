@@ -5,7 +5,7 @@
    - Ticker: "live from the warehouse" strip moving right to left, never stops (only the reduce-motion setting turns it off).
    - Carousels: native swipe/scroll-snap + arrow buttons + mouse drag.
    - Scroll progress bar + header shadow once you scroll.
-   - Big titles decode in (letters scramble, then lock in), once. More HUD motion in style.css "Moving parts (D35)".
+   - Big titles: a yellow colour band sweeps through the letters left to right, once. More HUD motion in style.css "Moving parts (D35)".
    Everything turns off with prefers-reduced-motion. */
 (function () {
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -56,30 +56,22 @@
     setTimeout(() => (el.textContent = fmt(to)), dur + 150); // always end on the real number, even if frames were paused
   }
 
-  /* ---------- title decode: letters scramble, then lock in left to right (HUD feel), once per title ---------- */
-  const GLYPHS = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789#/_";
+  /* ---------- title sweep: a yellow band of colour runs through the letters left to right, then is gone. Once per title ---------- */
   const sio = "IntersectionObserver" in window ? new IntersectionObserver((entries) => entries.forEach((e) => {
     if (!e.isIntersecting) return; sio.unobserve(e.target);
-    if (document.documentElement.classList.contains("ph-loading")) document.addEventListener("ph:ready", () => setTimeout(() => decode(e.target), 150), { once: true });
-    else decode(e.target);
+    if (document.documentElement.classList.contains("ph-loading")) document.addEventListener("ph:ready", () => setTimeout(() => sweep(e.target), 150), { once: true });
+    else sweep(e.target);
   }), { threshold: 0.3 }) : null;
-  function decode(el) {
-    const nodes = []; const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-    while (w.nextNode()) nodes.push([w.currentNode, w.currentNode.nodeValue]);
-    const total = nodes.reduce((s, [, t]) => s + t.length, 0); if (!total) return;
-    if (!el.hasAttribute("aria-label")) el.setAttribute("aria-label", nodes.map(([, t]) => t).join(" ").replace(/\s+/g, " ").trim()); // screen readers get the real words
-    const dur = Math.min(1000, 360 + total * 26), start = performance.now();
-    const frame = (t) => {
-      const k = Math.min((t - start) / dur, 1), lock = Math.floor(k * total); let i = 0;
-      nodes.forEach(([n, orig]) => { n.nodeValue = [...orig].map((c) => (i++ < lock || /[\s.,!?]/.test(c) ? c : GLYPHS[(Math.random() * GLYPHS.length) | 0])).join(""); });
-      if (k < 1) requestAnimationFrame(frame);
-    };
-    requestAnimationFrame(frame);
-    setTimeout(() => nodes.forEach(([n, o]) => (n.nodeValue = o)), dur + 120); // always end on the real text
+  function sweep(el) {
+    el.style.setProperty("--tc", getComputedStyle(el).color); // the title's own colour on both sides of the band
+    el.classList.add("title-sweep");
+    const done = () => el.classList.remove("title-sweep");
+    el.addEventListener("animationend", done, { once: true });
+    setTimeout(done, 1600); // never leave the text see-through
   }
   function titles(root) {
     if (calm() || !sio) return;
-    root.querySelectorAll(".hud-title, .page-title").forEach((el) => { if (el.dataset.dec) return; el.dataset.dec = "1"; sio.observe(el); });
+    root.querySelectorAll(".hud-title, .page-title").forEach((el) => { if (el.dataset.sw) return; el.dataset.sw = "1"; sio.observe(el); });
   }
 
   /* ---------- ticker (left ← right) ---------- */
@@ -103,8 +95,9 @@
     track.addEventListener("scroll", () => requestAnimationFrame(update), { passive: true });
     // mouse drag (touch already scrolls natively)
     let down = false, x0 = 0, s0 = 0, moved = false;
-    track.addEventListener("pointerdown", (e) => { if (e.pointerType !== "mouse") return; down = true; moved = false; x0 = e.clientX; s0 = track.scrollLeft; track.classList.add("dragging"); });
-    window.addEventListener("pointermove", (e) => { if (!down) return; const dx = e.clientX - x0; if (Math.abs(dx) > 4) moved = true; track.scrollLeft = s0 - dx; });
+    track.addEventListener("pointerdown", (e) => { if (e.pointerType !== "mouse" || e.button !== 0 || e.target.closest("button")) return; down = true; moved = false; x0 = e.clientX; s0 = track.scrollLeft; });
+    // drag mode starts only once the mouse really moves, so a plain click still reaches the card (bug fix 2026-11-07)
+    window.addEventListener("pointermove", (e) => { if (!down) return; const dx = e.clientX - x0; if (!moved && Math.abs(dx) > 4) { moved = true; track.classList.add("dragging"); } if (moved) track.scrollLeft = s0 - dx; });
     window.addEventListener("pointerup", () => { if (!down) return; down = false; track.classList.remove("dragging"); });
     track.addEventListener("click", (e) => { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; } }, true);
     update();

@@ -109,11 +109,11 @@
   function steps(names, cur) {
     return `<div class="steps" role="list" aria-label="Progress: step ${cur + 1} of ${names.length}">${names.map((n, i) => {
       const cls = i < cur ? "done" : i === cur ? "cur" : "todo";
-      return `<div class="step ${cls}" role="listitem"><div class="dot ${cls}">${i < cur ? "✓" : i + 1}</div><b>${esc(n)}</b></div>${i < names.length - 1 ? `<div class="bar ${i < cur ? "done" : ""}"></div>` : ""}`;
+      return `<div class="step ${cls}" role="listitem"><div class="dot ${cls}">${i < cur ? ico("check", 18) : i + 1}</div><b>${esc(n)}</b></div>${i < names.length - 1 ? `<div class="bar ${i < cur ? "done" : ""}"></div>` : ""}`;
     }).join("")}</div>`;
   }
   function vsteps(list) { // [{label, sub, state:'done'|'cur'|'todo'}]
-    return `<div class="vsteps">${list.map((s, i) => `<div class="vstep"><div class="rail"><div class="dot ${s.state}">${s.state === "done" ? "✓" : ""}</div>${i < list.length - 1 ? `<div class="line ${s.state === "done" ? "done" : ""}"></div>` : ""}</div><div><b style="${s.state === "todo" ? "color:var(--faint)" : ""}">${esc(s.label)}</b><div class="small muted">${esc(s.sub || "")}</div></div></div>`).join("")}</div>`;
+    return `<div class="vsteps">${list.map((s, i) => `<div class="vstep"><div class="rail"><div class="dot ${s.state}">${s.state === "done" ? ico("check", 15) : ""}</div>${i < list.length - 1 ? `<div class="line ${s.state === "done" ? "done" : ""}"></div>` : ""}</div><div><b style="${s.state === "todo" ? "color:var(--faint)" : ""}">${esc(s.label)}</b><div class="small muted">${esc(s.sub || "")}</div></div></div>`).join("")}</div>`;
   }
   function donut(parts, size = 170, sw = 20, center = "", sub = "") {
     const r = (size - sw) / 2, c = 2 * Math.PI * r, total = parts.reduce((s, p) => s + p[0], 0) || 1;
@@ -196,7 +196,9 @@
     input.addEventListener("input", () => { const d = input.value.replace(/\D/g, "").slice(0, 7); input.value = d ? Number(d).toLocaleString("en-PH") : ""; });
   }
 
-  /* digit boxes (2026-11-07): one box per digit, grouped like 0917 · 000 · 0012. The real value lives in the original (now hidden) input */
+  /* digit boxes (2026-11-07 v2): one cell per digit, but each group is ONE joined box split into cells
+     ([0|9|1|7] – [1|2|3] – [4|5|6|7]), empty cells show a faint dot, the group being typed in lights up,
+     and a check appears when complete. The real value lives in the original (now hidden) input. */
   function digitBoxes(input, groups = [4, 3, 4], label = "Mobile number") {
     if (!input || input.dataset.boxes) return;
     input.dataset.boxes = "1";
@@ -205,7 +207,8 @@
     const wrap = document.createElement("div");
     wrap.className = "digits"; wrap.setAttribute("role", "group"); wrap.setAttribute("aria-label", label);
     let n = 0;
-    wrap.innerHTML = groups.map((g, gi) => `<span class="dgroup" style="flex:${g} 1 0">${Array.from({ length: g }, () => { n++; return `<input class="dbox" inputmode="numeric" autocomplete="off" aria-label="${label}, digit ${n} of ${total}">`; }).join("")}</span>${gi < groups.length - 1 ? '<span class="dsep" aria-hidden="true">·</span>' : ""}`).join("");
+    wrap.innerHTML = groups.map((g, gi) => `<span class="dgroup" style="flex:${g} 1 0">${Array.from({ length: g }, () => { n++; return `<input class="dbox" inputmode="numeric" autocomplete="off" maxlength="${total}" placeholder="·" aria-label="${label}, digit ${n} of ${total}">`; }).join("")}</span>${gi < groups.length - 1 ? '<span class="dsep" aria-hidden="true"></span>' : ""}`).join("")
+      + `<span class="dcheck" aria-hidden="true">${ico("check", 18)}</span>`;
     input.after(wrap);
     const boxes = Array.from(wrap.querySelectorAll(".dbox"));
     const sync = () => {

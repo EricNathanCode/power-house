@@ -12,7 +12,7 @@
   const TRADE_FILTERS = { All: () => true, "To review": (t) => t.status === "Under review", "Waiting for customer": (t) => t.status === "Offer sent",
     "To receive": (t) => t.status === "Accepted", "To add to stock": (t) => t.status === "Received", Done: (t) => t.status === "In stock", Declined: (t) => ["Declined", "Rejected"].includes(t.status) };
 
-  document.body.insertAdjacentHTML("afterbegin", `<header class="nav"><a class="logo" href="index.html"><span class="mark">${PH.ui.ico("power", 18)}</span><span class="hide-xs">POWER HOUSE</span> <span class="staff-tag">Staff</span></a>
+  document.body.insertAdjacentHTML("afterbegin", `<header class="nav"><a class="logo" href="index.html">${PH.ui.logo(false)}<span class="logo-word hide-xs">POWER<em>HOUSE</em></span> <span class="staff-tag">Staff</span></a>
     <div class="nav-right"><span class="hide-sm">${badge("gray", "Warehouse Staff")}</span><b class="hide-sm">${esc(staff)}</b>
       <button class="btn xs icon" id="theme" aria-label="Switch dark mode">${ico("moon", 16)}</button>
       <a href="../store-web/index.html" class="hide-sm small">View store</a><button class="btn xs" id="logout" aria-label="Log out">${ico("logout", 16)}<span class="hide-xs">Log out</span></button></div></header>`);
@@ -160,17 +160,17 @@
         <div class="card table-card" style="margin-top:18px"><div class="table-wrap"><table><thead><tr><th>Trade-in</th><th>Customer</th><th>Item</th><th>Condition</th><th>Asking</th><th>Suggested</th><th>Offer</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
         ${list.map((t) => {
           let act = "", offer = t.offer ? money(t.offer) : "—";
-          if (t.status === "Under review") { offer = `<label class="sr-only" for="o-${t.id}">Offer</label><input type="number" id="o-${t.id}" value="${t.suggestedOffer || ""}" placeholder="₱" style="width:110px;height:40px">`; act = `<button class="btn p xs" data-offer="${t.id}">Send offer</button><button class="btn dg xs" data-reject="${t.id}">Decline</button>`; }
+          if (t.status === "Under review") { offer = `<label class="sr-only" for="o-${t.id}">Offer</label><input type="number" id="o-${t.id}" value="${t.suggestedOffer || ""}" placeholder="₱" style="width:92px;height:38px">`; act = `<button class="btn p xs" data-offer="${t.id}">Send offer</button><button class="btn dg xs" data-reject="${t.id}">Decline</button>`; }
           if (t.status === "Offer sent") act = '<span class="small muted">Waiting for customer</span>';
           if (t.status === "Accepted") act = `<button class="btn p xs" data-recv="${t.id}">Mark received</button>`;
-          if (t.status === "Received") act = `<label class="sr-only" for="r-${t.id}">Resale price</label><input type="number" id="r-${t.id}" value="${Math.round((t.offer || 0) * 1.3)}" style="width:110px;height:40px" title="Resale price"><button class="btn p xs" data-tostock="${t.id}">Add to stock (used)</button>`;
+          if (t.status === "Received") act = `<label class="sr-only" for="r-${t.id}">Resale price</label><input type="number" id="r-${t.id}" value="${Math.round((t.offer || 0) * 1.3)}" style="width:100%;height:36px" title="Resale price"><button class="btn p xs" data-tostock="${t.id}">Add to stock (used)</button>`;
           if (t.status === "Declined") act = '<span class="small muted">Customer said no</span>';
           if (t.status === "Rejected") act = `<span class="small muted">${esc(t.note || "Declined")}</span>`;
           if (t.status === "In stock") act = '<span class="small muted">Done</span>';
           const pct = PH.api.OFFER_PCT[t.condition];
           return `<tr><td class="nowrap"><b>${esc(t.id)}</b><div class="small muted">${date(t.createdAt)}</div></td><td class="nowrap">${esc(t.customerId)}</td><td><b class="nowrap">${esc(t.model)}</b><div class="small muted nowrap">${esc(t.type)} · ${t.photos || 0} ${t.photos === 1 ? "photo" : "photos"}</div></td>
             <td>${esc(t.condition)}</td><td>${money(t.askingPrice)}</td><td>${t.suggestedOffer ? `${money(t.suggestedOffer)} <span class="small muted">(${Math.round(pct * 100)}%)</span>` : '<span class="small muted">price by hand</span>'}</td>
-            <td>${offer}</td><td>${statusBadge(t.status)}</td><td><div class="row keep center" style="gap:8px;justify-content:flex-end">${act}</div></td></tr>`;
+            <td>${offer}</td><td>${statusBadge(t.status)}</td><td><div class="acts">${act}</div></td></tr>`;
         }).join("") || `<tr><td colspan="9" class="muted" style="text-align:center;padding:28px">No trade-ins in “${esc(st.tradeFilter)}”.</td></tr>`}
         </tbody></table></div></div>
         <p class="small muted">Flow: Under review → Offer sent → Accepted (customer) → Received → In stock (as a used item with its own SKU). Suggested offer: Like new 60%, Good 45%, Fair 30% of our retail price.</p>`);

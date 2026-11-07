@@ -20,7 +20,10 @@
     entries.forEach((e) => { if (e.isIntersecting) { play(e.target); io.unobserve(e.target); } });
   }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 }) : null;
 
+  const waiting = [];
+  document.addEventListener("ph:ready", () => waiting.splice(0).forEach((el, i) => setTimeout(() => play(el), 120 + i * 20)));
   function play(el) {
+    if (document.documentElement.classList.contains("ph-loading")) { waiting.push(el); return; }
     el.classList.add("in");
     el.querySelectorAll("[data-count]").forEach(countUp);
     setTimeout(() => el.classList.remove("rv"), 1800); // clean up so hover/press transforms work normally

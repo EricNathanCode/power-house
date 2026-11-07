@@ -1,6 +1,7 @@
 /* 04 Cart, with a clear empty state (UI idea 4) */
 (async () => {
   const { $, esc, money, ico, art, productRow, dialog } = PH.ui;
+  if (!PH.ui.requireLogin()) return; // the cart belongs to an account
   await PH.ui.storeHeader();
   const popular = (await PH.api.listProducts()).filter((p) => ["RAM-DDR4-16GB", "SSD-NVME-1TB", "KB-MECH-001", "HDD-2TB-72"].includes(p.sku));
 

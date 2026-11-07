@@ -559,3 +559,94 @@ html { overflow-x: clip; }
   .page-head { margin: -18px calc(50% - 50vw) 20px; padding: 22px calc(50vw - 50%) 20px; }
   .page-ghost { display: none; }
 }
+
+/* ---------- Logo: a house with a power button = POWER HOUSE ---------- */
+.mark { width: 40px; height: 38px; border-radius: 0; padding-top: 9px; clip-path: polygon(50% 0, 100% 42%, 100% 100%, 0 100%, 0 42%); }
+.mark svg { width: 17px; height: 17px; }
+
+/* ---------- Header links: bordered HUD tabs ---------- */
+.nav .links { gap: 8px; }
+.links a, [data-theme="dark"] .links a { position: relative; color: var(--ink); text-decoration: none; padding: 7px 14px; border: 1px solid var(--line-strong); border-radius: 3px; background: var(--surface); font-weight: 700; transition: background .15s ease-out, border-color .15s ease-out; }
+.links a::before { content: ""; position: absolute; left: -1px; top: -1px; width: 7px; height: 7px; border-left: 2px solid #F5C800; border-top: 2px solid #F5C800; }
+.links a::after { content: ""; position: absolute; right: -1px; bottom: -1px; width: 7px; height: 7px; border-right: 2px solid #F5C800; border-bottom: 2px solid #F5C800; }
+.links a:hover { border-color: var(--ink); background: var(--soft); }
+.links a.on, [data-theme="dark"] .links a.on { background: #FFE500; color: #111111; border-color: #111111; }
+.links a.on::before, .links a.on::after { border-color: #111111; }
+.nav-right a, [data-theme="dark"] .nav-right a { color: var(--ink); text-decoration: none; }
+.nav-right a.cart-btn { color: #111111 !important; }
+
+/* ================= START-UP LOADER (D32) ================= */
+html.ph-loading { background: #0E1013; }
+html.ph-loading body { visibility: hidden; overflow: hidden; }
+#ph-loader { visibility: visible; position: fixed; inset: 0; z-index: 1000; background: #0E1013; color: #F2F2F2; overflow: hidden; font-family: var(--font-body); }
+#ph-loader .pl-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px); background-size: 56px 56px; }
+#ph-loader .pl-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 6px; }
+#ph-loader .pl-bar i { display: block; height: 100%; background: #FFE500; transform: scaleY(0); transform-origin: top; }
+#ph-loader .pl-pct { position: absolute; left: 14px; top: 10px; font: 700 22px var(--font-head); color: #FFE500; letter-spacing: .5px; }
+#ph-loader .pl-center { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 22px; animation: pl-in .7s cubic-bezier(.22,1,.36,1) both; }
+#ph-loader .pl-logo { display: flex; align-items: center; gap: 14px; }
+#ph-loader .pl-house { width: 62px; height: 58px; background: #FFE500; color: #111; display: flex; align-items: center; justify-content: center; padding-top: 12px; clip-path: polygon(50% 0, 100% 42%, 100% 100%, 0 100%, 0 42%); }
+#ph-loader .pl-word { font: 700 34px/0.92 var(--font-head); letter-spacing: 1px; color: #fff; }
+#ph-loader .pl-tag { font: 600 11.5px var(--font-mono); letter-spacing: 2px; color: #9AA3B2; display: flex; align-items: center; gap: 10px; text-align: center; }
+#ph-loader .pl-tag i { width: 8px; height: 8px; background: #FFE500; flex-shrink: 0; }
+#ph-loader .pl-meta { position: absolute; right: 28px; bottom: 22px; font: 600 11px var(--font-mono); letter-spacing: 2px; color: #5E6673; }
+#ph-loader .pl-skip { position: absolute; right: 22px; top: 18px; background: none; border: 1px solid #3A404A; color: #9AA3B2; font: 600 12px var(--font-mono); letter-spacing: 1px; padding: 6px 12px; border-radius: 3px; cursor: pointer; }
+#ph-loader .pl-skip:hover { color: #fff; border-color: #9AA3B2; }
+#ph-loader .pl-wipe { position: absolute; inset: 0; background: #FFE500; transform: scaleX(0); transform-origin: left; }
+#ph-loader.wipe-in .pl-wipe { transform: scaleX(1); transition: transform .55s cubic-bezier(.77,0,.18,1); }
+#ph-loader.wipe-out { background: transparent; }
+#ph-loader.wipe-out > :not(.pl-wipe) { opacity: 0; }
+#ph-loader.wipe-out .pl-wipe { transform: scaleX(1); opacity: 0; transition: opacity .6s cubic-bezier(.22,1,.36,1); }
+@keyframes pl-in { from { opacity: 0; transform: translate(-50%, calc(-50% + 10px)); filter: blur(4px); } }
+@media (max-width: 760px) { #ph-loader .pl-word { font-size: 28px; } #ph-loader .pl-tag { font-size: 10px; letter-spacing: 1px; max-width: 280px; } #ph-loader .pl-meta { left: 22px; right: auto; } }
+@media (prefers-reduced-motion: reduce) { #ph-loader { display: none; } html.ph-loading body { visibility: visible; } }
+
+/* ---------- Search bar in the HUD style ---------- */
+.search { position: relative; }
+.search::before, .search::after { content: ""; position: absolute; width: 8px; height: 8px; pointer-events: none; z-index: 2; }
+.search::before { left: -1px; top: -1px; border-left: 2px solid #F5C800; border-top: 2px solid #F5C800; }
+.search::after { right: -1px; bottom: -1px; border-right: 2px solid #F5C800; border-bottom: 2px solid #F5C800; }
+.search input[type="search"] { border-radius: 2px; background: var(--surface); border: 1px solid var(--line-strong); font: 600 13px var(--font-mono); letter-spacing: .6px; padding-right: 44px; color: var(--ink); }
+.search input[type="search"]::placeholder { text-transform: uppercase; color: var(--faint); }
+.search input[type="search"]:focus { background: var(--surface); border-color: #111111; box-shadow: 0 0 0 1px #111111; }
+[data-theme="dark"] .search input[type="search"] { background: #11161F; }
+[data-theme="dark"] .search input[type="search"]:focus { border-color: #FFE500; box-shadow: 0 0 0 1px #FFE500; }
+.search svg { color: var(--ink); }
+.search .key { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font: 600 11px var(--font-mono); color: var(--muted); border: 1px solid var(--line-strong); border-radius: 3px; padding: 1px 7px; pointer-events: none; }
+.search input:focus ~ .key { display: none; }
+
+
+/* ---------- Logo C: roof + bolt (D33), replaces the house box ---------- */
+.mark { width: 30px; height: 30px; background: none !important; clip-path: none; padding: 0; color: var(--ink); border-radius: 0; display: inline-flex; align-items: center; justify-content: center; }
+.mark svg { width: 30px; height: 30px; }
+.mark .bolt { fill: #111111; }
+[data-theme="dark"] .mark { background: none; color: #F2F2F2; }
+[data-theme="dark"] .mark .bolt { fill: #FFE500; }
+.logo { gap: 8px; }
+.logo-word { font: 700 19px var(--font-head); letter-spacing: 1px; color: var(--ink); white-space: nowrap; }
+.logo-word em { font-style: normal; background: #FFE500; color: #111111; padding: 1px 5px; margin-left: 3px; }
+#ph-loader .pl-house { width: auto; height: auto; background: none; clip-path: none; padding: 0; color: #F2F2F2; }
+#ph-loader .pl-house .bolt { fill: #FFE500; }
+#ph-loader .pl-word { font: 700 38px var(--font-head); letter-spacing: 1.5px; color: #fff; }
+#ph-loader .pl-word em { font-style: normal; background: #FFE500; color: #111; padding: 0 8px; margin-left: 6px; }
+@media (max-width: 760px) { .logo-word { font-size: 17px; } #ph-loader .pl-word { font-size: 28px; } }
+
+
+/* ---------- No scrollbar "sliders" (2026-11-07) ---------- */
+:root { color-scheme: light; } [data-theme="dark"] { color-scheme: dark; }   /* any scrollbar the browser still draws matches the theme, never white */
+.carousel .track, .show-list, .tabs, .marquee { scrollbar-width: none; -ms-overflow-style: none; }
+.carousel .track::-webkit-scrollbar, .show-list::-webkit-scrollbar, .tabs::-webkit-scrollbar { display: none; }   /* carousels move with the arrows, drag or swipe */
+.table-wrap { scrollbar-width: none; }
+.table-wrap::-webkit-scrollbar { display: none; }
+/* tables fit the card instead of scrolling sideways */
+table { table-layout: auto; }
+th, td { padding: 10px 10px; }
+td .badge { white-space: normal; }
+.acts { display: flex; flex-direction: column; align-items: stretch; gap: 6px; min-width: 128px; max-width: 170px; margin-left: auto; }
+.acts .btn { width: 100%; }
+.acts .small { text-align: right; white-space: normal; }
+@media (max-width: 1100px) { .table-wrap { scrollbar-width: thin; } .table-wrap::-webkit-scrollbar { display: block; height: 6px; } .table-wrap::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 3px; } }
+
+/* ---------- Logo: the bolt is yellow in light mode too (thin black edge so it reads on white) ---------- */
+.mark .bolt { fill: #FFE500; stroke: #111111; stroke-width: 1; stroke-linejoin: round; paint-order: stroke; }
+[data-theme="dark"] .mark .bolt { stroke: none; }

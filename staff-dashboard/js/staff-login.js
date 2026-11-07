@@ -6,7 +6,7 @@
     <div class="photo grow" style="min-height:300px;border-radius:0;background-image:url('../shared/img/motherboard.jpg')" role="img" aria-label="Motherboard photo"></div>
     <div class="grow" style="display:flex;align-items:center;justify-content:center;padding:24px">
       <form class="card" style="width:min(480px,100%);padding:40px" id="form" novalidate>
-        <span class="logo"><span class="mark">${PH.ui.ico("power", 18)}</span>POWER HOUSE</span>
+        <span class="logo">${PH.ui.logo()}</span>
         <h2 style="margin-top:26px;font-size:36px">Staff Portal</h2>
         <p class="muted">Warehouse staff only. Customers, please use the <a href="../store-web/login.html">store login</a>.</p>
         <div class="note" style="margin:18px 0 22px">Sample staff login: <b>staff01</b> / <b>staff123</b></div>

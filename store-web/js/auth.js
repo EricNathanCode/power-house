@@ -20,7 +20,7 @@
         <label class="check"><input type="checkbox" id="agree"> I understand this is a student demo with sample data only</label><div class="err hidden" id="agree-err"></div></div>
         <button class="btn p block" style="margin-top:32px" id="go">Create account</button>
         <p style="text-align:center" class="muted">Already have an account? <a href="login.html${qs("next") ? "?next=" + encodeURIComponent(next) : ""}">Log in</a></p>`
-      : `<div class="hud-eyebrow">Account // log in</div><h2 class="bracket" style="margin-top:8px">Welcome back</h2><p class="muted">Log in to your Power House account.</p>
+      : `<div class="hud-eyebrow">Account // log in</div><h2 class="bracket" style="margin-top:8px">Welcome back</h2><p class="muted">${/^(cart|checkout)/.test(next) ? "Log in to see your cart and check out." : "Log in to your Power House account."}</p>
         <div class="note" style="margin:18px 0 22px">Sample account: <b>test1@example.com</b> / <b>sample123</b></div>
         ${f("email", "Email", "email", 'autocomplete="email" placeholder="name@example.com"')}${f("pw", "Password", "password", 'autocomplete="current-password"')}
         <div class="err hidden" id="login-err" style="margin-top:-10px;margin-bottom:12px"></div>

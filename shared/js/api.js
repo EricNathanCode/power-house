@@ -73,8 +73,9 @@
 
   /* ---------- cart (kept in the browser, like a real store would) ---------- */
   PH.cart = {
-    get() { try { return JSON.parse(localStorage.getItem("ph_cart")) || []; } catch (e) { return []; } },
-    set(items) { localStorage.setItem("ph_cart", JSON.stringify(items)); document.dispatchEvent(new CustomEvent("cart:change")); },
+    key() { const id = PH.session.customerId(); return id ? "ph_cart:" + id : null; },
+    get() { const k = this.key(); if (!k) return []; try { return JSON.parse(localStorage.getItem(k)) || []; } catch (e) { return []; } },
+    set(items) { const k = this.key(); if (!k) return; localStorage.setItem(k, JSON.stringify(items)); document.dispatchEvent(new CustomEvent("cart:change")); },
     add(sku, qty = 1) { const c = this.get(); const it = c.find((x) => x.sku === sku); if (it) it.qty += qty; else c.push({ sku, qty }); this.set(c); },
     update(sku, qty) { this.set(this.get().map((x) => (x.sku === sku ? { ...x, qty } : x)).filter((x) => x.qty > 0)); },
     remove(sku) { this.set(this.get().filter((x) => x.sku !== sku)); },
@@ -346,6 +347,6 @@
     },
 
     /* demo helper */
-    resetDemo() { localStorage.removeItem(KEY); localStorage.removeItem("ph_cart"); load(); }
+    resetDemo() { localStorage.removeItem(KEY); Object.keys(localStorage).filter((k) => k.startsWith("ph_cart")).forEach((k) => localStorage.removeItem(k)); load(); }
   };
 })();

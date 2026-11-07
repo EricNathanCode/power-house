@@ -180,7 +180,7 @@
 
   /* theme (dark mode, UI idea 1) */
   const theme = {
-    get: () => localStorage.getItem("ph_theme") || "light",
+    get: () => localStorage.getItem("ph_theme") || "dark",
     set: (t) => { localStorage.setItem("ph_theme", t); document.documentElement.dataset.theme = t; }
   };
   document.documentElement.dataset.theme = theme.get();
@@ -191,9 +191,9 @@
     const me = await PH.api.me();
     const a = (href, label) => `<a href="${href}" class="${active === label ? "on" : ""}">${label}</a>`;
     const html = `<header class="nav">
-      <a class="logo" href="index.html" aria-label="Power House home"><span class="mark">${PH.ui.ico("power", 18)}</span>POWER HOUSE</a>
+      <a class="logo" href="index.html" aria-label="Power House home">${logo()}</a>
       <nav class="links" aria-label="Main">${a("products.html?category=part", "PC Parts")}${a("products.html?category=accessory", "Accessories")}${a("products.html?category=prebuilt", "Prebuilt PCs")}${a("sell.html", "Sell to Us")}</nav>
-      <form class="search" role="search" action="products.html"><label class="sr-only" for="q">Search</label>${ico("search", 18)}<input id="q" name="q" type="search" placeholder="Search parts and PCs…"></form>
+      <form class="search" role="search" action="products.html"><label class="sr-only" for="q">Search</label>${ico("search", 18)}<input id="q" name="q" type="search" placeholder="Search parts // PCs"><kbd class="key" aria-hidden="true">/</kbd></form>
       <div class="nav-right">
         <a href="${me ? "account.html" : "login.html"}" class="hide-sm">${ico("user")}${me ? "Hi, " + esc(me.name.split(" ")[0] + " " + (me.name.split(" ")[1] || "")) : "Log in"}</a>
         <a href="orders.html" class="hide-sm">${ico("box")}My Orders</a>
@@ -206,6 +206,7 @@
     document.addEventListener("cart:change", () => $$("[data-cart-count]").forEach((x) => (x.textContent = PH.cart.count())));
     // header search suggestions (type to search)
     const q = $("#q");
+    if (q) addEventListener("keydown", (e) => { if (e.key === "/" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { e.preventDefault(); q.focus(); } });
     if (q) {
       const names = (await PH.api.listProducts()).map((p) => p.name);
       typeahead(q, () => names, (v) => { location.href = "products.html?q=" + encodeURIComponent(v); }, { enterPicksFirst: false });
@@ -226,6 +227,10 @@
     if (on) { btn.dataset.label = btn.innerHTML; btn.disabled = true; btn.innerHTML = label || "Working…"; }
     else { btn.disabled = false; if (btn.dataset.label) btn.innerHTML = btn.dataset.label; }
   }
+
+  /* Power House logo (D33): a roof line with a lightning bolt under it + POWER + yellow HOUSE tag */
+  const LOGO_MARK = '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" aria-hidden="true"><path d="M2.5 11 12 3l9.5 8" stroke="currentColor" stroke-width="2.6" stroke-linecap="square"/><path class="bolt" d="M13.2 9 8.8 15.4h3.1L10.9 21.6l4.6-7.2h-3.1L13.2 9Z"/></svg>';
+  const logo = (word = true) => `<span class="mark">${LOGO_MARK}</span>${word ? '<span class="logo-word">POWER<em>HOUSE</em></span>' : ''}`;
 
   /* HUD page header (D31): grid band, eyebrow, big title, outline ghost word, optional right side */
   function hudHead({ eyebrow, title, sub = "", ghost = "", right = "", crumb = "" }) {
@@ -249,8 +254,19 @@
       ${p.stock > 0 ? `<button class="btn xs o" data-add="${esc(p.sku)}" style="margin-top:4px">${ico("plus", 16)}Add to cart</button>` : `<span class="small muted">Out of stock</span>`}</div></div>`;
   }
   // one listener for every "Add to cart" button on the page
+  /* the cart needs an account: ask to log in, then come back to this page */
+  async function needLogin(next) {
+    if (PH.session.customerId()) return false;
+    const back = next || (location.pathname.split("/").pop() + location.search);
+    const ok = await dialog({ title: "Log in to use your cart", body: `Your cart is saved to your account, so you need to log in first. New here? <a href="signup.html?next=${encodeURIComponent(back)}">Create an account</a>.`, html: true, confirm: "Log in", cancel: "Keep browsing", icon: "cart" });
+    if (ok) location.href = "login.html?next=" + encodeURIComponent(back);
+    return true;
+  }
   document.addEventListener("click", async (e) => {
+    const c = e.target.closest("a.cart-btn, .tabbar a[href='cart.html']");
+    if (c && !PH.session.customerId()) { e.preventDefault(); needLogin("cart.html"); return; }
     const b = e.target.closest("[data-add]"); if (!b) return;
+    if (await needLogin()) return;
     const sku = b.dataset.add;
     const p = await PH.api.getProduct(sku);
     const inCart = (PH.cart.get().find((x) => x.sku === sku) || {}).qty || 0;
@@ -258,6 +274,6 @@
     PH.cart.add(sku, 1); toast(`Added ${p.name} to your cart`);
   });
 
-  PH.ui = { hudHead, $, $$, esc, money, date, time, when, qs, ico, art, badge, stockBadge, statusBadge, cancelledBy, steps, vsteps, donut, toast, dialog, modal, typeahead,
+  PH.ui = { logo, needLogin, hudHead, $, $$, esc, money, date, time, when, qs, ico, art, badge, stockBadge, statusBadge, cancelledBy, steps, vsteps, donut, toast, dialog, modal, typeahead,
     maskPhone, maskDigits, maskMoney, moneyValue, theme, storeHeader, storeFooter, requireLogin, errorText, busy, productCard, productRow, CRED };
 })();

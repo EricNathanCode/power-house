@@ -9,7 +9,7 @@
   const sub = o.items.reduce((s, i) => s + i.qty * i.price, 0);
   const bars = o.id.split("").map((c, i) => `<i style="display:block;background:var(--ink);width:${(c.charCodeAt(0) % 3) + 1}px"></i><i style="display:block;width:${(i % 2) + 1}px"></i>`).join("");
   $("#app").innerHTML = `${PH.ui.hudHead({ eyebrow: "Order // confirmed", title: "Order placed", ghost: "DONE" })}<div class="card hud-frame" style="max-width:560px;margin:10px auto;padding:34px">
-    <div class="row keep between center"><span class="logo"><span class="mark">${PH.ui.ico("power", 18)}</span>POWER HOUSE</span>${statusBadge(o.status)}</div>
+    <div class="row keep between center"><span class="logo">${PH.ui.logo()}</span>${statusBadge(o.status)}</div>
     <div class="hud-eyebrow" style="margin-top:22px">Receipt</div><h2 class="bracket" style="font-size:34px;margin-top:6px">${esc(o.id)}</h2>
     <p class="muted">Thank you, ${esc(me.name)}. Your items are reserved: we took them off the shelf the moment you ordered.</p>
     <div style="border-top:4px dotted var(--sh-dark);margin:18px 0 6px"></div>

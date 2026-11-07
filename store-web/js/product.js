@@ -43,8 +43,8 @@
   }
   $("#minus").onclick = () => { qty--; sync(); };
   $("#plus").onclick = () => { qty++; sync(); };
-  $("#add").onclick = () => { PH.cart.add(p.sku, qty); toast(`Added ${qty} × ${p.name} to your cart`); qty = 1; sync(); };
-  $("#buy").onclick = () => { PH.cart.add(p.sku, qty); location.href = "cart.html"; };
+  $("#add").onclick = async () => { if (await PH.ui.needLogin()) return; PH.cart.add(p.sku, qty); toast(`Added ${qty} × ${p.name} to your cart`); qty = 1; sync(); };
+  $("#buy").onclick = async () => { if (await PH.ui.needLogin()) return; PH.cart.add(p.sku, qty); location.href = "cart.html"; };
   document.addEventListener("cart:change", sync);
   sync();
   PH.ui.storeFooter();

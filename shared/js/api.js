@@ -6,9 +6,10 @@
    live on the SERVER; the browser can't skip them.
 
    Where is the API?
-   - page opened from the API server itself (npm start → http://localhost:4000): same address, /api
-   - page opened from another local server (e.g. port 5500): the API on port 4000 of the same host
-   - override for testing: localStorage.ph_api = "http://other-host:4000/api"
+   - deployed website (Render): same domain, /api
+   - page opened from API server (localhost:4000): /api
+   - another local server (e.g. port 5500): port 4000
+   - override for local testing: localStorage.ph_api
 
    Two small things stay in the browser on purpose:
    - the cart (per account), like most stores
@@ -22,10 +23,25 @@
   const FREE_SHIPPING_FROM = 30000;
 
   const API = (() => {
-    try { const o = localStorage.getItem("ph_api"); if (o) return o.replace(/\/$/, ""); } catch (e) { /* ignore */ }
-    if (location.protocol === "file:") return "http://localhost:4000/api";
-    return location.port === "4000" ? "/api" : `${location.protocol}//${location.hostname}:4000/api`;
-  })();
+  const isLocalHost = ["localhost", "127.0.0.1", "::1"].includes(location.hostname);
+
+  if (location.protocol !== "file:" && !isLocalHost) {
+    return "/api";
+  }
+
+  try {
+    const override = localStorage.getItem("ph_api");
+    if (override) return override.replace(/\/$/, "");
+  } catch (e) {
+    /* ignore */
+  }
+
+  if (location.protocol === "file:") return "http://localhost:4000/api";
+
+  return location.port === "4000"
+    ? "/api"
+    : `${location.protocol}//${location.hostname}:4000/api`;
+})();
 
   class ApiError extends Error {
     constructor(code, message, extra) { super(message); this.code = code; Object.assign(this, extra || {}); }

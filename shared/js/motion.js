@@ -51,7 +51,7 @@
     const to = Number(el.dataset.count); if (!isFinite(to)) return;
     const money = el.hasAttribute("data-money"), start = performance.now(), dur = 900;
     const fmt = (n) => (money ? "₱" : "") + Math.round(n).toLocaleString("en-PH");
-    const step = (t) => { const k = Math.min((t - start) / dur, 1); const e = 1 - Math.pow(1 - k, 4); el.textContent = fmt(to * e); if (k < 1) requestAnimationFrame(step); };
+    const step = (t) => { const k = Math.min(Math.max((t - start) / dur, 0), 1); const e = 1 - Math.pow(1 - k, 4); el.textContent = fmt(to * e); if (k < 1) requestAnimationFrame(step); };
     requestAnimationFrame(step);
     setTimeout(() => (el.textContent = fmt(to)), dur + 150); // always end on the real number, even if frames were paused
   }
@@ -122,6 +122,19 @@
   document.addEventListener("cart:change", () => {
     if (calm()) return;
     document.querySelectorAll(".cart-btn").forEach((b) => { b.classList.remove("bump"); void b.offsetWidth; b.classList.add("bump"); });
+  });
+
+  /* ---------- added to cart: a yellow chip flies from the button to the cart, so you see where it went ---------- */
+  document.addEventListener("hold:done", (e) => {
+    const cart = [...document.querySelectorAll(".cart-btn, .tabbar a[href='cart.html']")].find((c) => c.offsetParent !== null);
+    if (calm() || !cart || !e.target.getBoundingClientRect) return;
+    const a = e.target.getBoundingClientRect(), b = cart.getBoundingClientRect();
+    const chip = document.createElement("div"); chip.className = "fly-chip"; chip.setAttribute("aria-hidden", "true");
+    chip.style.left = a.left + a.width / 2 - 9 + "px"; chip.style.top = a.top + a.height / 2 - 9 + "px";
+    document.body.appendChild(chip);
+    const dx = b.left + b.width / 2 - (a.left + a.width / 2), dy = b.top + b.height / 2 - (a.top + a.height / 2);
+    chip.animate([{ transform: "translate(0,0) scale(1)", opacity: 1 }, { transform: `translate(${dx * 0.5}px, ${dy * 0.5 - 60}px) scale(1.3)`, opacity: 1, offset: 0.5 }, { transform: `translate(${dx}px, ${dy}px) scale(.4)`, opacity: 0.2 }],
+      { duration: 620, easing: "cubic-bezier(.65,0,.35,1)" }).onfinish = () => chip.remove();
   });
 
   function enhance(root) {

@@ -12,3 +12,6 @@ dist/
 Thumbs.db
 # local tool settings
 .claude/
+
+# design working files (screenshots, direction sheet)
+.taste-skill/

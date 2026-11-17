@@ -28,17 +28,23 @@
     </div>
     <div class="g4" id="grid" style="margin-top:22px"></div>`;
 
-  function draw() {
+  function render() {
     let out = list.filter((p) => (state.type === "All" || p.type === state.type) && (state.cond === "all" || p.condition === state.cond) && (!state.inStock || p.stock > 0));
     const s = { low: (a, b) => a.price - b.price, high: (a, b) => b.price - a.price, stock: (a, b) => b.stock - a.stock }[state.sort];
     if (s) out = out.slice().sort(s);
     $("#grid").innerHTML = out.length ? out.map(productCard).join("") :
       `<div class="card" style="grid-column:1/-1;text-align:center;padding:40px"><h3>No products match</h3><p class="muted">Try another type, or turn off “In stock only”.</p><a class="btn" href="products.html">See all products</a></div>`;
+    document.querySelectorAll("#grid .pcard").forEach((c) => {
+      const id = (new URL(c.querySelector("a").href).searchParams.get("sku") || "").replace(/[^a-zA-Z0-9]/g, "");
+      c.style.viewTransitionName = "card-" + id; c.querySelector(".art").style.viewTransitionName = "art-" + id;
+    });
   }
+  // filter / sort: the cards travel to their new places (browser view transitions). Instant where unsupported or with reduced motion
+  const draw = () => (document.startViewTransition && !matchMedia("(prefers-reduced-motion: reduce)").matches ? document.startViewTransition(render) : render());
   $("#types").addEventListener("click", (e) => { const b = e.target.closest("[data-type]"); if (!b) return; state.type = b.dataset.type; $$("#types .chip").forEach((c) => c.classList.toggle("on", c === b)); draw(); });
   $$("[data-cond]").forEach((b) => b.addEventListener("click", () => { state.cond = b.dataset.cond; $$("[data-cond]").forEach((c) => c.classList.toggle("on", c === b)); draw(); }));
   $("#instock").addEventListener("change", (e) => { state.inStock = e.target.checked; draw(); });
   $("#sort").addEventListener("change", (e) => { state.sort = e.target.value; draw(); });
-  draw();
+  render();
   PH.ui.storeFooter();
 })();

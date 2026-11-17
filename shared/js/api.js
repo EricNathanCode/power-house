@@ -22,7 +22,7 @@
   const SHIPPING_FEE = 150;
   const FREE_SHIPPING_FROM = 30000;
 
-  const API = (() => {
+const API = (() => {
   const isLocalHost = ["localhost", "127.0.0.1", "::1"].includes(location.hostname);
 
   if (location.protocol !== "file:" && !isLocalHost) {
@@ -36,7 +36,9 @@
     /* ignore */
   }
 
-  if (location.protocol === "file:") return "http://localhost:4000/api";
+  if (location.protocol === "file:") {
+    return "http://localhost:4000/api";
+  }
 
   return location.port === "4000"
     ? "/api"

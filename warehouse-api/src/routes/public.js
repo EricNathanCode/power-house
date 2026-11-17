@@ -10,7 +10,7 @@ const r = express.Router();
 
 /* GET /api/products?category=part&q=ram */
 r.get("/products", route(async (req, res) => {
-  const where = {};
+  const where = { archived: false }; // hidden products are not sold any more
   if (["part", "accessory", "prebuilt"].includes(req.query.category)) where.category = req.query.category;
   let list = await prisma.product.findMany({ where, orderBy: { createdAt: "asc" } });
   const q = String(req.query.q || "").trim().toLowerCase();
@@ -21,8 +21,16 @@ r.get("/products", route(async (req, res) => {
 /* GET /api/products/:sku */
 r.get("/products/:sku", route(async (req, res) => {
   const p = await prisma.product.findUnique({ where: { sku: req.params.sku } });
-  if (!p) throw notFound(`Product ${req.params.sku} not found`);
+  if (!p || p.archived) throw notFound(`Product ${req.params.sku} not found`);
   res.json(fmt.product(p));
+}));
+
+/* GET /api/products/:sku/image  -> the uploaded photo (the URL has ?v=, so it can be cached for a long time) */
+r.get("/products/:sku/image", route(async (req, res) => {
+  const img = await prisma.productImage.findUnique({ where: { sku: req.params.sku } });
+  if (!img) throw notFound("This product has no photo.");
+  res.set({ "Content-Type": img.mime, "Cache-Control": "public, max-age=31536000, immutable", "X-Content-Type-Options": "nosniff" });
+  res.send(Buffer.from(img.data));
 }));
 
 /* POST /api/quote  { lines: [{ sku, qty }] } -> prices from the database, shipping, total */

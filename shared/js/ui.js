@@ -64,7 +64,8 @@
     monitor: `<rect x="30" y="10" width="180" height="100" rx="8" fill="#111"/><rect x="40" y="20" width="160" height="80" rx="4" fill="#2B6CB0"/><rect x="110" y="110" width="20" height="16" fill="#4A5568"/><rect x="80" y="124" width="80" height="8" rx="4" fill="#4A5568"/>`,
     box: `<path d="M60 40l60-24 60 24v64l-60 24-60-24z" fill="#A0AEC0"/><path d="M60 40l60 24 60-24M120 64v64" stroke="#4A5568" stroke-width="4" fill="none"/>`
   };
-  const art = (kind, label = "") => `<svg viewBox="0 0 240 140" role="img" aria-label="${esc(label || "product drawing")}" xmlns="http://www.w3.org/2000/svg">${ART[kind] || ART.box}</svg>`;
+  // a photo address (uploaded by staff) shows the photo; anything else is the name of a drawing
+  const art = (kind, label = "") => /^(https?:|\/)/.test(String(kind)) ? `<img class="pphoto" src="${esc(kind)}" alt="${esc(label || "product photo")}" loading="lazy" decoding="async">` : `<svg viewBox="0 0 240 140" role="img" aria-label="${esc(label || "product drawing")}" xmlns="http://www.w3.org/2000/svg">${ART[kind] || ART.box}</svg>`;
 
   /* badges: symbol + text (never color alone) */
   const badge = (kind, text) => `<span class="badge ${kind}">${{ ok: "●", low: "▲", out: "✕", used: "◆", blue: "●", gray: "●" }[kind] || ""} ${esc(text)}</span>`;

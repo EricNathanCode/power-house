@@ -36,7 +36,7 @@
     const col = p.stock <= 0 ? "#B4173A" : p.low ? "#D97706" : "#F5C800";
     return `<div class="stockbar" title="Stock ${p.stock}, low level ${p.lowStockLevel}, target ${target}"><div class="track"><div class="fillbar" style="width:${pct}%;background:${col}"></div>${p.lowStockLevel ? `<div class="mark" style="left:${mark}%"></div>` : ""}</div><span class="small"><b>${p.stock}</b> / ${target}</span></div>`;
   };
-  const invBadge = (p) => p.stock <= 0 ? badge("out", "Sold out") : p.low ? badge("low", p.stock === p.lowStockLevel ? "At low level" : "Low") : p.condition === "used" ? badge("used", "Used") : badge("ok", "In stock");
+  const invBadge = (p) => p.archived ? badge("gray", "Hidden") : p.stock <= 0 ? badge("out", "Sold out") : p.low ? badge("low", p.stock === p.lowStockLevel ? "At low level" : "Low") : p.condition === "used" ? badge("used", "Used") : badge("ok", "In stock");
   const moveRow = (m, products) => {
     const p = products.find((x) => x.sku === m.sku);
     return `<div class="row keep center" style="gap:14px;padding:11px 0;border-bottom:1px solid var(--line)"><b style="width:52px;font:700 18px var(--font-head);color:${m.change > 0 ? "var(--action-ink)" : "var(--danger)"}">${m.change > 0 ? "+" : "−"}${Math.abs(m.change)}</b>
@@ -46,7 +46,8 @@
   /* ---------- tabs ---------- */
   const views = {
     async overview() {
-      const [orders, inv, trades, pos, moves] = await Promise.all([PH.api.allOrders(), PH.api.inventory(), PH.api.allTradeIns(), PH.api.purchaseOrders(), PH.api.stockMovements()]);
+      const [orders, all, trades, pos, moves] = await Promise.all([PH.api.allOrders(), PH.api.inventory(), PH.api.allTradeIns(), PH.api.purchaseOrders(), PH.api.stockMovements()]);
+      const inv = all.filter((p) => !p.archived); // hidden products are not sold any more
       const value = inv.reduce((s, p) => s + p.price * Math.max(p.stock, 0), 0);
       const units = inv.reduce((s, p) => s + Math.max(p.stock, 0), 0);
       const c = { ok: inv.filter((p) => p.stock > 0 && !p.low && p.condition === "new").length, low: inv.filter((p) => p.low && p.stock > 0).length, out: inv.filter((p) => p.stock <= 0).length, used: inv.filter((p) => p.condition === "used" && p.stock > 0).length };
@@ -106,12 +107,15 @@
 
     async inventory() {
       const inv = await PH.api.inventory();
-      const cats = ["All", "part", "accessory", "prebuilt", "used"];
-      const label = (c) => (c === "All" ? "All" : c === "used" ? "Used" : CAT[c]);
-      const n = (c) => inv.filter((p) => c === "All" || (c === "used" ? p.condition === "used" : p.category === c)).length;
+      const hidden = inv.filter((p) => p.archived);
+      if (st.invCat === "hidden" && !hidden.length) st.invCat = "All"; // the last hidden product was put back
+      const cats = ["All", "part", "accessory", "prebuilt", "used", ...(hidden.length ? ["hidden"] : [])];
+      const label = (c) => (c === "All" ? "All" : c === "used" ? "Used" : c === "hidden" ? "Hidden" : CAT[c]);
+      const inCat = (p, c) => (c === "hidden" ? p.archived : !p.archived && (c === "All" || (c === "used" ? p.condition === "used" : p.category === c)));
+      const n = (c) => inv.filter((p) => inCat(p, c)).length;
       const q = st.invQ.toLowerCase();
       const urgency = (p) => (p.stock <= 0 ? 0 : p.low ? 1 : 2);
-      const list = inv.filter((p) => (st.invCat === "All" || (st.invCat === "used" ? p.condition === "used" : p.category === st.invCat)) && (!q || (p.sku + " " + p.name).toLowerCase().includes(q))).sort((a, b) => urgency(a) - urgency(b) || a.name.localeCompare(b.name));
+      const list = inv.filter((p) => inCat(p, st.invCat) && (!q || (p.sku + " " + p.name).toLowerCase().includes(q))).sort((a, b) => urgency(a) - urgency(b) || a.name.localeCompare(b.name));
       return `<h2>Warehouse</h2>${tabsHtml("inventory")}
         <div class="row between center wrapflex" style="margin-top:20px;gap:14px"><div class="row keep center wrapflex" style="gap:12px">
           <div class="search" style="width:260px"><label class="sr-only" for="iq">Search stock</label>${ico("search", 18)}<input id="iq" type="search" placeholder="Search SKU or name" value="${esc(st.invQ)}"></div>
@@ -120,9 +124,9 @@
         <div class="card table-card" style="margin-top:18px"><div class="table-wrap"><table><thead><tr><th>Product</th><th>Category</th><th>Stock (bar = target, line = low level)</th><th>Low level</th><th>Price</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>
         ${list.map((p) => `<tr><td><div class="row keep center" style="gap:12px"><div class="art" style="width:64px;height:44px;flex-shrink:0">${art(p.art, p.name)}</div><div><b>${esc(p.name)}</b><div class="small muted">${esc(p.sku)}</div></div></div></td>
           <td>${esc(CAT[p.category] || p.category)}<div class="small muted">${esc(p.type)}</div></td><td>${stockBar(p)}</td><td>${p.lowStockLevel}</td><td>${money(p.price)}</td><td>${invBadge(p)}</td>
-          <td><div class="row keep" style="gap:8px;justify-content:flex-end">${p.low ? `<a class="btn p xs" href="#low-stock">Reorder</a>` : ""}<button class="btn xs" data-restock="${esc(p.sku)}">Restock</button><button class="btn xs icon" data-edit="${esc(p.sku)}" aria-label="Edit ${esc(p.name)}">${ico("edit", 16)}</button></div></td></tr>`).join("") || `<tr><td colspan="7" class="muted" style="text-align:center;padding:28px">No products match.</td></tr>`}
+          <td><div class="row keep" style="gap:8px;justify-content:flex-end">${p.archived ? `<button class="btn p xs" data-restore="${esc(p.sku)}">Put back on store</button>` : `${p.low ? `<a class="btn p xs" href="#low-stock">Reorder</a>` : ""}<button class="btn xs" data-restock="${esc(p.sku)}">Restock</button>`}<button class="btn xs icon" data-edit="${esc(p.sku)}" aria-label="Edit ${esc(p.name)}">${ico("edit", 16)}</button></div></td></tr>`).join("") || `<tr><td colspan="7" class="muted" style="text-align:center;padding:28px">No products match.</td></tr>`}
         </tbody></table></div></div>
-        <p class="small muted">Showing ${list.length} of ${inv.length} SKUs · most urgent first · target stock = 3 × low level</p>`;
+        <p class="small muted">${st.invCat === "hidden" ? "Hidden products are not on the store. They were in past orders, reorders or trade-ins, so they are kept for those records." : `Showing ${list.length} of ${inv.length - hidden.length} SKUs · most urgent first · target stock = 3 × low level`}</p>`;
     },
 
     async "low-stock"() {
@@ -217,11 +221,31 @@
   }
   const refresh = () => route();
 
+  /* Shrink a photo before upload: longest side 1200 px, WebP (JPEG if the browser can't make WebP).
+     Re-drawing it also drops the hidden camera data (EXIF), e.g. the GPS location of the phone. */
+  async function shrinkPhoto(file) {
+    const bmp = await createImageBitmap(file);
+    const k = Math.min(1, 1200 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement("canvas"); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height); bmp.close();
+    const make = (type) => new Promise((res) => c.toBlob(res, type, 0.85));
+    let out = await make("image/webp");
+    if (!out || out.type !== "image/webp") out = await make("image/jpeg");
+    if (!out) throw new Error("encode failed");
+    return out;
+  }
+
   /* ---------- modals ---------- */
   function productForm(p) {
+    if (document.querySelector(".overlay")) return; // already open (e.g. a double click)
     const isNew = !p;
     p = p || { sku: "", name: "", category: "part", type: "", price: "", stock: 0, lowStockLevel: 5 };
     modal(`<h2>${isNew ? "New product" : "Edit product"}</h2><form id="pf" novalidate style="margin-top:18px">
+      <div class="field"><span class="lab" id="f-photo-l">Photo</span><div class="photo-pick">
+        <div class="art photo-prev" id="f-prev" title="Drop a photo here">${art(p.art || "box", p.name || "New product")}</div>
+        <div class="grow"><div class="row keep wrapflex" style="gap:8px"><input type="file" id="f-photo" class="sr-only" accept="image/jpeg,image/png,image/webp"><label class="btn sm" for="f-photo">${ico("plus", 16, "currentColor")}<span id="f-photo-t">${p.image ? "Change photo" : "Upload photo"}</span></label>
+          <button type="button" class="btn xs dg ${p.image ? "" : "hidden"}" id="f-photo-rm">Remove</button></div>
+          <div class="help">JPG, PNG or WebP. Customers see it on the store. A plain background looks best.</div></div></div></div>
       ${isNew ? `<div class="field"><label for="f-sku">SKU</label><input id="f-sku" placeholder="e.g. RAM-DDR5-32GB"><div class="help">Capital letters, numbers and dashes</div></div>` : `<p class="small muted">SKU ${esc(p.sku)}</p>`}
       <div class="field"><label for="f-name">Name</label><input id="f-name" value="${esc(p.name)}"></div>
       <div class="row" style="gap:16px"><div class="field grow"><label for="f-cat">Category</label><select id="f-cat" ${isNew ? "" : "disabled"}>${Object.entries(CAT).map(([v, l]) => `<option value="${v}" ${p.category === v ? "selected" : ""}>${l}</option>`).join("")}</select></div>
@@ -230,16 +254,56 @@
       ${isNew ? `<div class="field grow"><label for="f-stock">Starting stock</label><input id="f-stock" type="number" min="0" value="0"></div>` : ""}
       <div class="field grow"><label for="f-low">Low-stock level</label><input id="f-low" type="number" min="0" value="${p.lowStockLevel}"></div></div>
       <div class="err hidden" id="f-err"></div>
-      <div class="actions"><button type="button" class="btn" data-close>Cancel</button><button class="btn p grow">${isNew ? "Add product" : "Save changes"}</button></div></form>`, (o, close) => {
+      <div class="actions"><button type="button" class="btn" data-close>Cancel</button><button class="btn p grow" id="f-save">${isNew ? "Add product" : "Save changes"}</button></div>
+      ${isNew ? "" : `<div class="danger-zone"><button type="button" class="btn xs dg" id="f-del">${ico("x", 14, "currentColor")}Delete product</button><span class="small muted">Never sold: deleted for good. In past orders: hidden from the store.</span></div>`}</form>`, (o, close) => {
+      /* photo: null = no change, a Blob = upload on save, "remove" = back to the drawing on save */
+      let photo = null;
+      const prev = o.querySelector("#f-prev"), rm = o.querySelector("#f-photo-rm"), box = o.querySelector("#f-err");
+      const showErr = (m) => { box.textContent = m; box.classList.toggle("hidden", !m); };
+      async function pick(file) {
+        if (!file) return;
+        if (!/^image\/(jpeg|png|webp)$/.test(file.type)) { showErr("Use a JPG, PNG or WebP photo."); return; }
+        if (file.size > 15 * 1024 * 1024) { showErr("That photo is over 15 MB. Pick a smaller one."); return; }
+        try { photo = await shrinkPhoto(file); } catch (x) { showErr("Couldn't read that photo. Try another file."); return; }
+        showErr(""); prev.innerHTML = `<img class="pphoto" src="${URL.createObjectURL(photo)}" alt="New photo">`; prev.classList.add("changed");
+        rm.classList.remove("hidden"); o.querySelector("#f-photo-t").textContent = "Change photo";
+      }
+      o.querySelector("#f-photo").addEventListener("change", (e) => { pick(e.target.files[0]); e.target.value = ""; });
+      prev.addEventListener("dragover", (e) => { e.preventDefault(); prev.classList.add("drop"); });
+      prev.addEventListener("dragleave", () => prev.classList.remove("drop"));
+      prev.addEventListener("drop", (e) => { e.preventDefault(); prev.classList.remove("drop"); pick(e.dataTransfer.files[0]); });
+      rm.addEventListener("click", () => {
+        photo = p.image ? "remove" : null;
+        prev.innerHTML = art(p.drawing || "box", p.name); prev.classList.toggle("changed", !!p.image);
+        rm.classList.add("hidden"); o.querySelector("#f-photo-t").textContent = "Upload photo";
+      });
+      const del = o.querySelector("#f-del");
+      if (del) del.addEventListener("click", async () => {
+        const ok = await dialog({ title: `Delete ${p.name}?`, body: "If it was never sold, reordered or traded in, it is deleted for good with its photo. If it was, it is hidden from the store instead, so past orders stay correct. You can put a hidden product back later.", confirm: "Delete product", cancel: "Keep it", danger: true, icon: "alert" });
+        if (!ok) return;
+        try { const r = await PH.api.deleteProduct(p.sku); close(); toast(r.deleted ? `${p.name} deleted` : `${p.name} is in past orders, so it was hidden from the store`); refresh(); }
+        catch (x) { showErr(errorText(x)); }
+      });
       o.querySelector("#pf").addEventListener("submit", async (e) => {
         e.preventDefault();
         const v = (id) => o.querySelector(id) && o.querySelector(id).value.trim();
         const data = { name: v("#f-name"), type: v("#f-type"), price: Number(v("#f-price")), lowStockLevel: Number(v("#f-low")) };
         let err = !data.name ? "Enter a name." : !data.type ? "Enter a type." : !(data.price > 0) ? "Price must be above ₱0." : !(data.lowStockLevel >= 0) ? "Low-stock level can't be negative." : "";
         if (isNew) { data.sku = v("#f-sku").toUpperCase(); data.category = v("#f-cat"); data.stock = Number(v("#f-stock")) || 0; if (!err && !/^[A-Z0-9-]{4,}$/.test(data.sku)) err = "SKU: at least 4 capital letters, numbers or dashes."; }
-        const box = o.querySelector("#f-err"); box.textContent = err; box.classList.toggle("hidden", !err); if (err) return;
-        try { isNew ? await PH.api.createProduct(data) : await PH.api.updateProduct(p.sku, data); close(); toast(isNew ? `${data.name} added` : "Changes saved"); refresh(); }
-        catch (x) { box.textContent = errorText(x); box.classList.remove("hidden"); }
+        showErr(err); if (err) return;
+        const save = o.querySelector("#f-save"); busy(save, true, "Saving…");
+        let saved = false;
+        try {
+          isNew ? await PH.api.createProduct(data) : await PH.api.updateProduct(p.sku, data); saved = true;
+          const sku = isNew ? data.sku : p.sku;
+          if (photo instanceof Blob) await PH.api.uploadProductImage(sku, photo);
+          if (photo === "remove") await PH.api.removeProductImage(sku);
+          close(); toast(isNew ? `${data.name} added` : "Changes saved"); refresh();
+        } catch (x) {
+          busy(save, false);
+          if (saved && isNew) { close(); toast(`${data.name} added, but the photo did not upload (${errorText(x)}). Open Edit to try again.`, true); refresh(); return; }
+          showErr(saved ? "Details saved, but the photo was not: " + errorText(x) : errorText(x));
+        }
       });
     });
   }
@@ -267,6 +331,7 @@
     if (d.icat) { st.invCat = d.icat; refresh(); }
     if (t.id === "newp") productForm(null);
     if (d.edit) productForm((await PH.api.inventory()).find((p) => p.sku === d.edit));
+    if (d.restore) run(() => PH.api.restoreProduct(d.restore), "Back on the store");
     if (d.restock) restockForm((await PH.api.inventory()).find((p) => p.sku === d.restock));
     if (d.approve) { const q = Number($(`[data-qty="${d.approve}"]`).value); run(async () => { const r = await PH.api.approveReorder(d.approve, q); toast(`${r.poNumber} sent to the supplier (simulated)`); }); }
     if (d.ship) run(() => PH.api.markShipped(d.ship), `${d.ship} marked shipped`);

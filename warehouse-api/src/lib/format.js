@@ -23,7 +23,10 @@ const isLow = (p) => p.lowStockLevel > 0 && p.stock <= p.lowStockLevel;
 
 const product = (p) => ({
   sku: p.sku, name: p.name, category: p.category, type: p.type, price: p.price, stock: p.stock,
-  lowStockLevel: p.lowStockLevel, condition: p.condition, art: p.art, specs: p.specs
+  lowStockLevel: p.lowStockLevel, condition: p.condition, art: p.art, specs: p.specs,
+  // uploaded photo (path under /api; ?v= changes with every new photo, so browsers can keep it cached)
+  image: p.imageAt ? `/products/${encodeURIComponent(p.sku)}/image?v=${p.imageAt.getTime()}` : null,
+  ...(p.archived ? { archived: true } : {})
 });
 
 const customer = (c) => ({

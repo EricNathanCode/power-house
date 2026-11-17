@@ -32,7 +32,7 @@ const shippingFor = (subtotal) => (subtotal === 0 || subtotal >= FREE_SHIPPING_F
 /* prices always come from the database, never from the browser */
 async function quote(rawLines, db = prisma) {
   const lines = cleanLines(rawLines, { allowEmpty: true });
-  const products = await db.product.findMany({ where: { sku: { in: lines.map((l) => l.sku) } } });
+  const products = await db.product.findMany({ where: { sku: { in: lines.map((l) => l.sku) }, archived: false } });
   const bySku = new Map(products.map((p) => [p.sku, p]));
   const items = lines.filter((l) => bySku.has(l.sku)).map((l) => {
     const p = bySku.get(l.sku);
@@ -55,7 +55,7 @@ async function placeOrder(customerId, body) {
   }
 
   return prisma.$transaction(async (tx) => {
-    const products = await tx.product.findMany({ where: { sku: { in: lines.map((l) => l.sku) } } });
+    const products = await tx.product.findMany({ where: { sku: { in: lines.map((l) => l.sku) }, archived: false } });
     const bySku = new Map(products.map((p) => [p.sku, p]));
     for (const l of lines) if (!bySku.has(l.sku)) throw notFound(`Product ${l.sku} not found.`);
 

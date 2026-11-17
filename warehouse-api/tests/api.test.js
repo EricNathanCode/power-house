@@ -237,6 +237,53 @@ test("staff: inventory, add product, edit, restock, stock log", async () => {
   assert.equal(log.body[0].reason, "restock");
 });
 
+test("staff: product photo upload / remove, delete or hide a product", async () => {
+  const staff = client();
+  await staff("POST", "/api/staff/login", { username: "staff01", password: "staff123" });
+  const cookie = await (async () => { const r = await fetch(base + "/api/staff/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ username: "staff01", password: "staff123" }) }); return r.headers.getSetCookie()[0].split(";")[0]; })();
+  const upload = (sku, type, bytes, who = cookie) => fetch(`${base}/api/staff/products/${sku}/image`, { method: "PUT", headers: { "content-type": type, ...(who ? { cookie: who } : {}) }, body: bytes });
+  // a real 1x1 PNG, padded so it is over the 100-byte minimum
+  const png = Buffer.concat([Buffer.from("89504e470d0a1a0a0000000d4948445200000001000000010806000000" + "1f15c4890000000d49444154789c6360000002000154a24f5d0000000049454e44ae426082", "hex"), Buffer.alloc(64)]);
+
+  assert.equal((await upload("GPU-8GB", "image/png", png, "")).status, 401, "customers / strangers can't upload");
+  assert.equal((await upload("GPU-8GB", "image/png", Buffer.alloc(200, 65))).status, 400, "a fake PNG is refused");
+  assert.equal((await upload("GPU-8GB", "text/plain", png)).status, 400);
+  assert.equal((await upload("NOPE-1", "image/png", png)).status, 404);
+  assert.equal((await upload("GPU-8GB", "image/png", Buffer.alloc(3.5 * 1024 * 1024, 1))).status, 413, "over 3 MB");
+  const up = await upload("GPU-8GB", "image/png", png);
+  assert.equal(up.status, 200);
+  const imgUrl = (await up.json()).image;
+  assert.match(imgUrl, /^\/products\/GPU-8GB\/image\?v=\d+$/);
+  assert.equal((await staff("GET", "/api/products/GPU-8GB")).body.image, imgUrl, "customers get the photo link");
+  const img = await fetch(base + "/api" + imgUrl);
+  assert.equal(img.headers.get("content-type"), "image/png");
+  assert.ok(Buffer.from(await img.arrayBuffer()).equals(png));
+  assert.equal((await staff("DELETE", "/api/staff/products/GPU-8GB/image")).status, 200);
+  assert.equal((await staff("GET", "/api/products/GPU-8GB")).body.image, null, "back to the drawing");
+  assert.equal((await fetch(base + "/api" + imgUrl)).status, 404);
+
+  // never sold -> deleted for good (photo and stock log too)
+  await staff("POST", "/api/staff/products", { sku: "TEST-DEL-01", name: "Delete me", category: "accessory", type: "Mouse", price: 100, stock: 2 });
+  await upload("TEST-DEL-01", "image/png", png);
+  assert.deepEqual((await staff("DELETE", "/api/staff/products/TEST-DEL-01")).body, { deleted: true });
+  assert.equal(await prisma.product.count({ where: { sku: "TEST-DEL-01" } }), 0);
+  assert.equal(await prisma.productImage.count({ where: { sku: "TEST-DEL-01" } }), 0);
+
+  // already in orders -> hidden instead; old orders still show it; can't be bought; can be restored
+  assert.deepEqual((await staff("DELETE", "/api/staff/products/MS-WL-01")).body, { archived: true });
+  const pub = await staff("GET", "/api/products");
+  assert.ok(!pub.body.some((p) => p.sku === "MS-WL-01"), "hidden from the store");
+  assert.equal((await staff("GET", "/api/products/MS-WL-01")).status, 404);
+  assert.ok((await staff("GET", "/api/staff/products")).body.find((p) => p.sku === "MS-WL-01").archived, "staff still see it");
+  const cust = client();
+  await cust("POST", "/api/auth/login", { email: "test1@example.com", password: "sample123" });
+  assert.equal((await cust("POST", "/api/orders", { lines: [{ sku: "MS-WL-01", qty: 1 }], paymentMethod: "COD", address: "123 Sample St., Indang, Cavite 4122" })).status, 404);
+  assert.ok((await staff("GET", "/api/staff/orders")).body.some((o) => o.items.some((i) => i.sku === "MS-WL-01")), "past orders keep it");
+  assert.equal((await staff("PUT", "/api/staff/products/MS-WL-01", { archived: false })).status, 200);
+  assert.ok((await staff("GET", "/api/products")).body.some((p) => p.sku === "MS-WL-01"), "restored");
+  assert.equal((await client()("DELETE", "/api/staff/products/GPU-8GB")).status, 401);
+});
+
 test("D7/D10 + SIMULATED supplier: low stock, reorder, ship, receive", async () => {
   const staff = client();
   await staff("POST", "/api/staff/login", { username: "staff01", password: "staff123" });

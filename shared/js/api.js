@@ -59,10 +59,11 @@ const API = (() => {
   async function request(method, path, body) {
     let res;
     try {
+      const file = typeof Blob !== "undefined" && body instanceof Blob; // a photo upload is sent as the file itself
       res = await fetch(API + path, {
         method, credentials: "include",
-        headers: body === undefined ? {} : { "content-type": "application/json" },
-        body: body === undefined ? undefined : JSON.stringify(body)
+        headers: body === undefined ? {} : { "content-type": file ? body.type : "application/json" },
+        body: body === undefined ? undefined : file ? body : JSON.stringify(body)
       });
     } catch (e) {
       document.dispatchEvent(new CustomEvent("ph:offline")); // the page shows a banner (ui.js)
@@ -82,6 +83,11 @@ const API = (() => {
   }
   const enc = encodeURIComponent;
 
+  /* uploaded photo: the server sends a path under /api; pages draw p.art, so a photo simply replaces the drawing name
+     with the full photo address (ui.js art() shows an <img> for it) */
+  const withPhoto = (p) => { if (p && p.image) { p.drawing = p.art; p.photo = API + p.image; p.art = p.photo; } return p; };
+  const withPhotos = (list) => (Array.isArray(list) ? list.forEach(withPhoto) : withPhoto(list), list);
+
   /* ---------- product list kept in memory, so the cart can be priced instantly ---------- */
   let catalog = [];
   const bySku = () => new Map(catalog.map((p) => [p.sku, p]));
@@ -92,7 +98,7 @@ const API = (() => {
     return list;
   }
   let catalogReady = null;
-  const loadCatalog = () => (catalogReady = request("GET", "/products").then((l) => { catalog = l; return l; }).catch(() => catalog));
+  const loadCatalog = () => (catalogReady = request("GET", "/products").then((l) => { catalog = withPhotos(l); return l; }).catch(() => catalog));
   loadCatalog();
 
   /* trade-in reference product: same choice as the server (warehouse-api/src/services/tradeIns.js) */
@@ -133,9 +139,9 @@ const API = (() => {
       const qs = new URLSearchParams();
       if (category) qs.set("category", category);
       if (q) qs.set("q", q);
-      return remember(await request("GET", "/products" + (qs.toString() ? "?" + qs : "")));
+      return remember(withPhotos(await request("GET", "/products" + (qs.toString() ? "?" + qs : ""))));
     },
-    async getProduct(sku) { const p = await request("GET", "/products/" + enc(sku)); remember([p]); return p; },
+    async getProduct(sku) { const p = withPhoto(await request("GET", "/products/" + enc(sku))); remember([p]); return p; },
 
     /* price a cart right away from the product list (the server prices it again when the order is placed) */
     quote(lines) {
@@ -190,11 +196,17 @@ const API = (() => {
     },
     async allOrders() { return request("GET", "/staff/orders"); },
     async setOrderStatus(id, status) { return request("PUT", "/staff/orders/" + enc(id) + "/status", { status }); },
-    async inventory() { return request("GET", "/staff/products"); },
+    async inventory() { return withPhotos(await request("GET", "/staff/products")); },
     async createProduct(p) { return request("POST", "/staff/products", p); },
     async updateProduct(sku, patch) { return request("PUT", "/staff/products/" + enc(sku), patch); },
+    /* never sold -> { deleted: true }; already in orders / reorders / trade-ins -> hidden instead: { archived: true } */
+    async deleteProduct(sku) { const r = await request("DELETE", "/staff/products/" + enc(sku)); loadCatalog(); return r; },
+    async restoreProduct(sku) { const r = await request("PUT", "/staff/products/" + enc(sku), { archived: false }); loadCatalog(); return r; },
+    /* photo = a Blob/File (JPEG, PNG or WebP); the dashboard shrinks it first */
+    async uploadProductImage(sku, photo) { return withPhoto(await request("PUT", "/staff/products/" + enc(sku) + "/image", photo)); },
+    async removeProductImage(sku) { return request("DELETE", "/staff/products/" + enc(sku) + "/image"); },
     async restock(sku, qty) { return request("POST", "/staff/products/" + enc(sku) + "/restock", { qty }); },
-    async lowStock() { return request("GET", "/staff/low-stock"); },
+    async lowStock() { return withPhotos(await request("GET", "/staff/low-stock")); },
     /* reorders go to the SIMULATED supplier */
     async approveReorder(sku, qty) { return request("POST", "/staff/purchase-orders", { sku, qty }); },
     async purchaseOrders() { return request("GET", "/staff/purchase-orders"); },

@@ -55,7 +55,7 @@ r.put("/orders/:id/cancel", route(async (req, res) => res.json(await orders.canc
 /* GET /api/staff/products  (with target stock + low flag) */
 r.get("/products", route(async (req, res) => {
   const list = await prisma.product.findMany({ orderBy: { createdAt: "asc" } });
-  res.json(list.map((p) => ({ ...fmt.product(p), targetStock: fmt.targetStock(p), low: fmt.isLow(p) })));
+  res.json(list.map((p) => ({ ...fmt.product(p), targetStock: fmt.targetStock(p), low: !p.archived && fmt.isLow(p) })));
 }));
 
 /* POST /api/staff/products  { sku, name, category, type, price, lowStockLevel, stock } */
@@ -67,7 +67,8 @@ r.post("/products", route(async (req, res) => {
     price: check.int(b.price, "Price", { min: 1, max: 10_000_000 }), lowStockLevel: check.int(b.lowStockLevel ?? 0, "Low-stock level", { min: 0, max: 100_000 }),
     stock: check.int(b.stock ?? 0, "Starting stock", { min: 0, max: 100_000 }), condition: "new", art: "box", specs: {}
   };
-  if (await prisma.product.findUnique({ where: { sku: data.sku } })) throw conflict("SKU_TAKEN", "That SKU already exists.");
+  const old = await prisma.product.findUnique({ where: { sku: data.sku } });
+  if (old) throw conflict("SKU_TAKEN", old.archived ? "That SKU belongs to a hidden product. Restore it in Inventory (Hidden) instead." : "That SKU already exists.");
   await prisma.$transaction(async (tx) => {
     await tx.product.create({ data });
     if (data.stock > 0) await logMovement(tx, data.sku, data.stock, "restock", "new product");
@@ -84,7 +85,62 @@ r.put("/products/:sku", route(async (req, res) => {
   if (b.type !== undefined) data.type = check.text(b.type, "Type", { min: 2, max: 60 });
   if (b.price !== undefined) data.price = check.int(b.price, "Price", { min: 1, max: 10_000_000 });
   if (b.lowStockLevel !== undefined) data.lowStockLevel = check.int(b.lowStockLevel, "Low-stock level", { min: 0, max: 100_000 });
+  if (b.archived !== undefined) data.archived = b.archived === true; // false = put a hidden product back on the store
   await prisma.product.update({ where: { sku: p.sku }, data });
+  res.json(true);
+}));
+
+/* DELETE /api/staff/products/:sku
+   Never sold, reordered or traded in -> deleted for good.
+   Already in an order, purchase order or trade-in -> hidden from the store instead, so those records stay correct.
+   -> { deleted: true } or { archived: true } */
+r.delete("/products/:sku", route(async (req, res) => {
+  const result = await prisma.$transaction(async (tx) => {
+    const p = await tx.product.findUnique({ where: { sku: req.params.sku }, include: { _count: { select: { orderItems: true, purchaseOrders: true, fromTradeIns: true } } } });
+    if (!p) throw notFound(`Product ${req.params.sku} not found`);
+    const used = p._count.orderItems + p._count.purchaseOrders + p._count.fromTradeIns;
+    if (used > 0) {
+      await tx.product.update({ where: { sku: p.sku }, data: { archived: true } });
+      return { archived: true };
+    }
+    await tx.stockMovement.deleteMany({ where: { sku: p.sku } }); // only hand restocks are left for a product that was never sold
+    await tx.supplierProduct.deleteMany({ where: { sku: p.sku } });
+    await tx.product.delete({ where: { sku: p.sku } }); // the photo goes with it (cascade)
+    return { deleted: true };
+  }, TX);
+  res.json(result);
+}));
+
+/* PUT /api/staff/products/:sku/image  body = the image file itself (JPEG, PNG or WebP, up to 3 MB).
+   The dashboard shrinks photos before sending, so they are usually under 200 KB. */
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const looksLike = (b, mime) =>
+  (mime === "image/jpeg" && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) ||
+  (mime === "image/png" && b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) ||
+  (mime === "image/webp" && b.subarray(0, 4).toString("latin1") === "RIFF" && b.subarray(8, 12).toString("latin1") === "WEBP");
+r.put("/products/:sku/image", express.raw({ type: IMAGE_TYPES, limit: "3mb" }), route(async (req, res) => {
+  const mime = String(req.headers["content-type"] || "").split(";")[0].trim().toLowerCase();
+  const data = req.body;
+  if (!IMAGE_TYPES.includes(mime) || !Buffer.isBuffer(data) || data.length < 100) throw new ApiError(400, "BAD_IMAGE", "Upload a JPG, PNG or WebP photo.");
+  if (!looksLike(data, mime)) throw new ApiError(400, "BAD_IMAGE", "That file is not a real JPG, PNG or WebP image.");
+  const p = await prisma.product.findUnique({ where: { sku: req.params.sku } });
+  if (!p) throw notFound(`Product ${req.params.sku} not found`);
+  const at = new Date();
+  await prisma.$transaction([
+    prisma.productImage.upsert({ where: { sku: p.sku }, create: { sku: p.sku, mime, data }, update: { mime, data } }),
+    prisma.product.update({ where: { sku: p.sku }, data: { imageAt: at } })
+  ]);
+  res.json(fmt.product({ ...p, imageAt: at }));
+}));
+
+/* DELETE /api/staff/products/:sku/image  -> back to the drawing */
+r.delete("/products/:sku/image", route(async (req, res) => {
+  const p = await prisma.product.findUnique({ where: { sku: req.params.sku } });
+  if (!p) throw notFound(`Product ${req.params.sku} not found`);
+  await prisma.$transaction([
+    prisma.productImage.deleteMany({ where: { sku: p.sku } }),
+    prisma.product.update({ where: { sku: p.sku }, data: { imageAt: null } })
+  ]);
   res.json(true);
 }));
 
@@ -103,7 +159,7 @@ r.post("/products/:sku/restock", route(async (req, res) => {
 /* GET /api/staff/low-stock  (D7 own level per product, D10 suggested reorder qty) */
 r.get("/low-stock", route(async (req, res) => {
   const [list, open] = await Promise.all([
-    prisma.product.findMany({ include: { supplierProduct: true }, orderBy: { createdAt: "asc" } }),
+    prisma.product.findMany({ where: { archived: false }, include: { supplierProduct: true }, orderBy: { createdAt: "asc" } }),
     prisma.purchaseOrder.findMany({ where: { status: { not: "DELIVERED" } }, orderBy: { poNumber: "asc" } })
   ]);
   res.json(list.filter(fmt.isLow).map((p) => {
@@ -140,7 +196,8 @@ r.get("/purchase-orders", route(async (req, res) => {
 /* POST /api/staff/purchase-orders  { sku, qty }  -> sent to the SIMULATED supplier */
 r.post("/purchase-orders", route(async (req, res) => {
   if (!(await supplierOnline())) throw new ApiError(503, "SUPPLIER_DOWN", "Supplier unavailable (simulated). Try again later.");
-  const sup = await prisma.supplierProduct.findUnique({ where: { sku: String(req.body.sku || "") } });
+  const sup = await prisma.supplierProduct.findUnique({ where: { sku: String(req.body.sku || "") }, include: { product: true } });
+  if (sup && sup.product.archived) throw conflict("HIDDEN_PRODUCT", "This product is hidden from the store. Restore it before reordering.");
   if (!sup) throw new ApiError(400, "NO_SUPPLIER", "The supplier doesn't sell this item.");
   if (!Number.isInteger(req.body.qty) || req.body.qty < sup.minOrderQty) throw new ApiError(400, "BELOW_MIN", `The supplier minimum is ${sup.minOrderQty}.`);
   const qty = check.int(req.body.qty, "Quantity", { min: sup.minOrderQty, max: 100_000 });

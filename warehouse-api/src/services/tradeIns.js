@@ -24,7 +24,7 @@ function pickRef(list, type) {
 async function suggestOffer(type, conditionLabel) {
   const cond = fmt.CONDITION_CODE[conditionLabel];
   if (!cond || !String(type || "").trim()) return null;
-  const ref = pickRef(await prisma.product.findMany({ where: { condition: "new" } }), type);
+  const ref = pickRef(await prisma.product.findMany({ where: { condition: "new", archived: false } }), type);
   if (!ref) return null;
   const pct = fmt.OFFER_PCT[cond];
   return { retail: ref.price, pct, offer: Math.round(ref.price * pct), refName: ref.name };
@@ -119,7 +119,7 @@ async function addToStock(id, price) {
         }
       });
     }
-    await tx.product.update({ where: { sku }, data: { stock: { increment: 1 } } });
+    await tx.product.update({ where: { sku }, data: { stock: { increment: 1 }, archived: false } }); // back on sale if it was hidden
     await logMovement(tx, sku, 1, "tradeIn", t.id);
     const ok = await step(tx, id, "RECEIVED", "IN_STOCK", { stockSku: sku });
     if (!ok) throw new ApiError(409, "BAD_STEP", "Someone else changed this trade-in just now. Refresh and try again.");

@@ -22,6 +22,9 @@ function errorHandler(err, req, res, next) { // eslint-disable-line no-unused-va
   if (err instanceof ApiError) {
     return res.status(err.status).json({ error: { code: err.code, message: err.message, ...err.extra } });
   }
+  if (err.type === "entity.too.large") {
+    return res.status(413).json({ error: { code: "TOO_BIG", message: "That file is too big. Use a photo under 3 MB." } });
+  }
   if (err.type === "entity.parse.failed") {
     return res.status(400).json({ error: { code: "BAD_JSON", message: "The request body is not valid JSON." } });
   }

@@ -15,7 +15,7 @@
   $("#app").innerHTML = `
     <div class="small muted mono"><a href="index.html">Home</a> / <a href="products.html?category=${p.category}">${catName}</a> / ${esc(p.type)}</div>
     <div class="row start stack-md" style="margin-top:18px;gap:40px">
-      <div class="grow"><div class="hud-frame stage-box hud-grid"><div class="hud-ghost" aria-hidden="true" style="left:16px;bottom:-10px;font-size:clamp(70px,10vw,150px)">${esc(p.type)}</div><div class="hud-cross" style="left:14px;top:14px"></div><div class="hud-cross" style="right:14px;bottom:14px"></div><div class="art" style="height:clamp(220px,32vw,420px);background:transparent;view-transition-name:art-${p.sku.replace(/[^a-zA-Z0-9]/g, "")}">${art(p.art, p.name)}</div></div><p class="small muted mono">FILE · ${esc(p.sku)} · drawing for the demo, sample product</p></div>
+      <div class="grow"><div class="hud-frame stage-box hud-grid"><div class="hud-ghost" aria-hidden="true" style="left:16px;bottom:-10px;font-size:clamp(70px,10vw,150px)">${esc(p.type)}</div><div class="hud-cross" style="left:14px;top:14px"></div><div class="hud-cross" style="right:14px;bottom:14px"></div><div class="art" style="height:clamp(220px,32vw,420px);background:transparent;view-transition-name:art-${p.sku.replace(/[^a-zA-Z0-9]/g, "")}">${art(p.art, p.name)}</div></div><p class="small muted mono">FILE · ${esc(p.sku)} · ${p.photo ? "product photo" : "drawing for the demo, sample product"}</p></div>
       <div style="width:min(520px,100%)">
         <div>${stockBadge(p)} ${p.stock > 0 ? `<span class="small muted" style="margin-left:6px">${p.stock} available</span>` : ""}</div>
         <div class="hud-eyebrow" style="margin-top:14px">${esc(catName)} // ${esc(p.type)}</div>

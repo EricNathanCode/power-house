@@ -81,6 +81,8 @@ model Product {
   condition     ProductCondition @default(new)
   art           String           @default("box") // which drawing the website shows
   specs         Json             @default("{}")
+  imageAt       DateTime?        @db.Timestamptz(3) // when the photo was last changed (null = no photo, the drawing is shown)
+  archived      Boolean          @default(false) // hidden from the store; kept because past orders use it
   createdAt     DateTime         @default(now()) @db.Timestamptz(3)
   updatedAt     DateTime         @updatedAt @db.Timestamptz(3)
 
@@ -89,9 +91,21 @@ model Product {
   supplierProduct SupplierProduct?
   purchaseOrders  PurchaseOrder[]
   fromTradeIns    TradeIn[]
+  image           ProductImage?
 
   @@index([category])
   @@map("products")
+}
+
+// product photo uploaded by staff. Kept in its own table so product lists don't load the image bytes.
+// Stored in the database (not on disk) because Render's disk is wiped on every deploy.
+model ProductImage {
+  sku     String  @id
+  mime    String // image/jpeg, image/png or image/webp
+  data    Bytes
+  product Product @relation(fields: [sku], references: [sku], onDelete: Cascade)
+
+  @@map("product_images")
 }
 
 model StockMovement {

@@ -1019,3 +1019,19 @@ td .badge.sb { height: auto; min-height: 26px; padding-top: 4px; padding-bottom:
   label.check { min-height: 40px; display: inline-flex; align-items: center; } /* the whole label is the tap target for small checkboxes */
 }
 @media (max-width: 760px) { html body .chip { min-height: 40px; } }
+
+/* ---------- Product photos (2026-11-17) ---------- */
+/* uploaded photos sit inside the same .art box as the drawings; contain = the whole product shows, never cropped */
+.art img.pphoto { width: 100%; height: 100%; object-fit: contain; display: block; }
+.pcard .art img.pphoto, .prow .art img.pphoto { transition: transform .35s var(--ease-out); }
+.pcard:hover .art img.pphoto, .prow:hover .art img.pphoto { transform: scale(1.04); }
+/* staff: photo picker in Edit / New product */
+.photo-pick { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.photo-pick .photo-prev { width: 132px; height: 96px; flex-shrink: 0; outline: 1px dashed var(--line); outline-offset: 3px; transition: outline-color .2s, box-shadow .2s; }
+.photo-pick .photo-prev.drop { outline: 2px dashed #FFE500; box-shadow: 0 0 0 6px rgba(255, 229, 0, .12); }
+.photo-pick .photo-prev.changed { outline: 2px solid #FFE500; }
+.photo-pick label.btn { margin: 0; display: inline-flex; cursor: pointer; }
+.photo-pick .help { margin-top: 10px; }
+.photo-pick input[type=file]:focus-visible + label.btn { outline: 2px solid #FFE500; outline-offset: 2px; }
+.danger-zone { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+@media (max-width: 520px) { .photo-pick .photo-prev { width: 100%; height: 150px; } }

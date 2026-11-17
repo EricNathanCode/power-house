@@ -80,7 +80,8 @@ model Product {
   lowStockLevel Int              @default(0) // each product has its own low-stock level (D7)
   condition     ProductCondition @default(new)
   art           String           @default("box") // which drawing the website shows
-  specs         Json             @default("{}")
+  specs         Json             @default("{}") // { "Socket": "AM4" } from the sample data, or [["Socket","AM4"], ...] when staff edit it (a list keeps the order staff chose)
+  description   String           @default("") // short text for the product page, written by staff
   imageAt       DateTime?        @db.Timestamptz(3) // when the photo was last changed (null = no photo, the drawing is shown)
   archived      Boolean          @default(false) // hidden from the store; kept because past orders use it
   createdAt     DateTime         @default(now()) @db.Timestamptz(3)

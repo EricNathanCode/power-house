@@ -25,7 +25,8 @@
         <div class="field" style="margin-bottom:0"><span class="lab">Quantity</span>
           <div class="row keep center" style="gap:12px"><button class="btn icon" id="minus" aria-label="Less">${ico("minus")}</button><b id="qty" style="min-width:28px;text-align:center;font-size:20px">${qty}</b><button class="btn icon" id="plus" aria-label="More">${ico("plus")}</button><span class="small muted" id="qtyhelp"></span></div></div>
         <div class="actions"><button class="btn p grow" id="add" data-hold title="Press and hold to add">${ico("cart", 18, "currentColor")}Add to cart</button><button class="btn" id="buy">Buy now</button></div>
-        <div class="card" style="margin-top:28px"><h3>Specs</h3>${Object.entries(p.specs || {}).map(([k, v]) => `<div class="leader"><b>${esc(k)}</b><span class="fill"></span><span>${esc(v)}</span></div>`).join("") || '<p class="muted">No specs yet.</p>'}</div>
+        ${p.description ? `<div class="card" style="margin-top:28px"><h3>About this product</h3><p class="pdesc">${esc(p.description)}</p></div>` : ""}
+        <div class="card" style="margin-top:${p.description ? 16 : 28}px"><h3>Specs</h3>${Object.entries(p.specs || {}).map(([k, v]) => `<div class="leader"><b>${esc(k)}</b><span class="fill"></span><span>${esc(v)}</span></div>`).join("") || '<p class="muted">No specs yet.</p>'}</div>
         <div class="small muted" style="margin-top:14px">${ico("bolt", 16)} Stock is checked again when you place the order, so two people can't buy the last one.</div>
       </div>
     </div>

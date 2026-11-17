@@ -284,6 +284,27 @@ test("staff: product photo upload / remove, delete or hide a product", async () 
   assert.equal((await client()("DELETE", "/api/staff/products/GPU-8GB")).status, 401);
 });
 
+test("staff: specs and description (only staff can write them; order is kept)", async () => {
+  const staff = client();
+  await staff("POST", "/api/staff/login", { username: "staff01", password: "staff123" });
+  const specs = { Warranty: "3 years", Socket: "AM5", Cores: "8 cores / 16 threads" };
+  assert.equal((await staff("PUT", "/api/staff/products/CPU-6C-12T", { specs, description: "  Fast CPU for gaming builds.  " })).status, 200);
+  const p = (await staff("GET", "/api/products/CPU-6C-12T")).body;
+  assert.deepEqual(Object.keys(p.specs), ["Warranty", "Socket", "Cores"], "the order staff typed is kept");
+  assert.equal(p.description, "Fast CPU for gaming builds.");
+  assert.equal((await staff("PUT", "/api/staff/products/CPU-6C-12T", { specs: { Socket: "" } })).status, 400, "a label needs a value");
+  assert.equal((await staff("PUT", "/api/staff/products/CPU-6C-12T", { specs: ["x"] })).status, 400);
+  assert.equal((await staff("PUT", "/api/staff/products/CPU-6C-12T", { description: "x".repeat(2001) })).status, 400);
+  assert.equal((await staff("POST", "/api/staff/products", { sku: "SPEC-TEST-1", name: "Spec test", category: "part", type: "CPU", price: 10, specs: { Socket: "AM4" }, description: "Hi" })).status, 201);
+  assert.deepEqual((await staff("GET", "/api/products/SPEC-TEST-1")).body.specs, { Socket: "AM4" });
+  // customers and strangers can't write them
+  const cust = client();
+  await cust("POST", "/api/auth/login", { email: "test1@example.com", password: "sample123" });
+  assert.equal((await cust("PUT", "/api/staff/products/CPU-6C-12T", { description: "hacked" })).status, 401);
+  assert.equal((await client()("PUT", "/api/staff/products/CPU-6C-12T", { description: "hacked" })).status, 401);
+  assert.equal((await staff("GET", "/api/products/CPU-6C-12T")).body.description, "Fast CPU for gaming builds.");
+});
+
 test("D7/D10 + SIMULATED supplier: low stock, reorder, ship, receive", async () => {
   const staff = client();
   await staff("POST", "/api/staff/login", { username: "staff01", password: "staff123" });

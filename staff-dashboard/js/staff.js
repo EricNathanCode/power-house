@@ -253,6 +253,14 @@
       <div class="row" style="gap:16px"><div class="field grow"><label for="f-price">Price (₱)</label><input id="f-price" type="number" min="1" value="${p.price}"></div>
       ${isNew ? `<div class="field grow"><label for="f-stock">Starting stock</label><input id="f-stock" type="number" min="0" value="0"></div>` : ""}
       <div class="field grow"><label for="f-low">Low-stock level</label><input id="f-low" type="number" min="0" value="${p.lowStockLevel}"></div></div>
+      <div class="field"><span class="lab" id="f-specs-l">Specs</span>
+        <div class="spec-rows" id="f-specs" role="group" aria-labelledby="f-specs-l"></div>
+        <button type="button" class="btn xs" id="f-spec-add">${ico("plus", 14, "currentColor")}Add spec</button>
+        <div class="help">Shown on the product page in this order, e.g. Socket → AM4. Empty rows are skipped.</div>
+        <datalist id="spec-labels"></datalist></div>
+      <div class="field"><label for="f-desc">Description <span class="small muted" style="font-weight:400">(optional)</span></label>
+        <textarea id="f-desc" rows="4" maxlength="2000" placeholder="A few lines for customers: what it's good for, what's in the box…">${esc(p.description || "")}</textarea>
+        <div class="help row keep between"><span>Customers see this on the product page.</span><span><span id="f-desc-n">${(p.description || "").length}</span> / 2000</span></div></div>
       <div class="err hidden" id="f-err"></div>
       <div class="actions"><button type="button" class="btn" data-close>Cancel</button><button class="btn p grow" id="f-save">${isNew ? "Add product" : "Save changes"}</button></div>
       ${isNew ? "" : `<div class="danger-zone"><button type="button" class="btn xs dg" id="f-del">${ico("x", 14, "currentColor")}Delete product</button><span class="small muted">Never sold: deleted for good. In past orders: hidden from the store.</span></div>`}</form>`, (o, close) => {
@@ -277,6 +285,33 @@
         prev.innerHTML = art(p.drawing || "box", p.name); prev.classList.toggle("changed", !!p.image);
         rm.classList.add("hidden"); o.querySelector("#f-photo-t").textContent = "Upload photo";
       });
+      /* specs editor: one row = label + value; ↑ moves a row up, × removes it */
+      const rows = o.querySelector("#f-specs");
+      const rowHtml = (k = "", v = "") => `<div class="spec-row"><input class="spec-k" aria-label="Spec label" placeholder="Label, e.g. Socket" list="spec-labels" maxlength="40" value="${esc(k)}"><input class="spec-v" aria-label="Spec value" placeholder="Value, e.g. AM4" maxlength="120" value="${esc(v)}"><button type="button" class="btn xs icon" data-spec-up aria-label="Move this spec up">↑</button><button type="button" class="btn xs icon" data-spec-rm aria-label="Remove this spec">${ico("x", 14)}</button></div>`;
+      const addRow = (k, v, focus) => { rows.insertAdjacentHTML("beforeend", rowHtml(k, v)); if (focus) rows.lastElementChild.querySelector(".spec-k").focus(); };
+      Object.entries(p.specs || {}).forEach(([k, v]) => addRow(k, v));
+      if (!rows.children.length) addRow();
+      o.querySelector("#f-spec-add").addEventListener("click", () => addRow("", "", true));
+      rows.addEventListener("click", (e) => {
+        const r = e.target.closest(".spec-row"); if (!r) return;
+        if (e.target.closest("[data-spec-rm]")) { r.remove(); if (!rows.children.length) addRow(); }
+        if (e.target.closest("[data-spec-up]") && r.previousElementSibling) rows.insertBefore(r, r.previousElementSibling);
+      });
+      const readSpecs = () => [...rows.children].map((r) => [r.querySelector(".spec-k").value.trim(), r.querySelector(".spec-v").value.trim()]).filter(([k, v]) => k || v);
+      /* label ideas from the other products; a new product of a known type starts with that type's labels */
+      PH.api.inventory().then((inv) => {
+        const labels = [...new Set(inv.flatMap((x) => Object.keys(x.specs || {})))].sort();
+        o.querySelector("#spec-labels").innerHTML = labels.map((l) => `<option value="${esc(l)}"></option>`).join("");
+        const typeBox = o.querySelector("#f-type");
+        typeBox.addEventListener("change", () => {
+          if (readSpecs().length) return;
+          const same = inv.find((x) => x.type.toLowerCase() === typeBox.value.trim().toLowerCase() && Object.keys(x.specs || {}).length);
+          if (!same) return;
+          rows.innerHTML = ""; Object.keys(same.specs).forEach((k) => addRow(k, ""));
+        });
+      }).catch(() => {});
+      const desc = o.querySelector("#f-desc");
+      desc.addEventListener("input", () => { o.querySelector("#f-desc-n").textContent = desc.value.length; });
       const del = o.querySelector("#f-del");
       if (del) del.addEventListener("click", async () => {
         const ok = await dialog({ title: `Delete ${p.name}?`, body: "If it was never sold, reordered or traded in, it is deleted for good with its photo. If it was, it is hidden from the store instead, so past orders stay correct. You can put a hidden product back later.", confirm: "Delete product", cancel: "Keep it", danger: true, icon: "alert" });
@@ -287,8 +322,12 @@
       o.querySelector("#pf").addEventListener("submit", async (e) => {
         e.preventDefault();
         const v = (id) => o.querySelector(id) && o.querySelector(id).value.trim();
-        const data = { name: v("#f-name"), type: v("#f-type"), price: Number(v("#f-price")), lowStockLevel: Number(v("#f-low")) };
+        const specRows = readSpecs();
+        const data = { name: v("#f-name"), type: v("#f-type"), price: Number(v("#f-price")), lowStockLevel: Number(v("#f-low")), specs: Object.fromEntries(specRows), description: v("#f-desc") };
+        const labels = specRows.map(([k]) => k.toLowerCase());
         let err = !data.name ? "Enter a name." : !data.type ? "Enter a type." : !(data.price > 0) ? "Price must be above ₱0." : !(data.lowStockLevel >= 0) ? "Low-stock level can't be negative." : "";
+        if (!err && specRows.some(([k, x]) => !k || !x)) err = "Specs: every row needs a label and a value (or clear both).";
+        if (!err && new Set(labels).size !== labels.length) err = "Specs: each label can only be used once.";
         if (isNew) { data.sku = v("#f-sku").toUpperCase(); data.category = v("#f-cat"); data.stock = Number(v("#f-stock")) || 0; if (!err && !/^[A-Z0-9-]{4,}$/.test(data.sku)) err = "SKU: at least 4 capital letters, numbers or dashes."; }
         showErr(err); if (err) return;
         const save = o.querySelector("#f-save"); busy(save, true, "Saving…");

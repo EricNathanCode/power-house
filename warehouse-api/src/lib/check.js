@@ -17,6 +17,19 @@ function int(v, label, { min = 0, max = 10_000_000 } = {}) {
   return n;
 }
 
+/* product specs: { "Socket": "AM4", ... } -> [["Socket", "AM4"], ...] (a list keeps the order; empty rows are dropped) */
+function specs(v) {
+  if (v === null || typeof v !== "object" || Array.isArray(v)) throw bad("Specs must be a list of labels and values.", { field: "Specs" });
+  const rows = Object.entries(v).map(([k, x]) => [String(k).trim(), typeof x === "string" || typeof x === "number" ? String(x).trim() : ""]).filter(([k, x]) => k || x);
+  if (rows.length > 20) throw bad("Specs: at most 20 rows.", { field: "Specs" });
+  for (const [k, x] of rows) {
+    if (!k || !x) throw bad("Specs: every row needs a label and a value.", { field: "Specs" });
+    if (k.length > 40) throw bad(`Specs: "${k.slice(0, 20)}…" label is too long (40 characters max).`, { field: "Specs" });
+    if (x.length > 120) throw bad(`Specs: the value for "${k}" is too long (120 characters max).`, { field: "Specs" });
+  }
+  return rows;
+}
+
 function email(v) {
   const s = text(v, "Email", { max: 120 }).toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)) throw bad("Enter an email like name@example.com.", { field: "Email" });
@@ -55,4 +68,4 @@ const sku = (v) => {
   return s;
 };
 
-module.exports = { text, int, email, phone, password, zip, oneOf, sku };
+module.exports = { text, int, email, phone, password, zip, oneOf, sku, specs };

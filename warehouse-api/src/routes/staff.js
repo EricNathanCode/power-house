@@ -58,14 +58,16 @@ r.get("/products", route(async (req, res) => {
   res.json(list.map((p) => ({ ...fmt.product(p), targetStock: fmt.targetStock(p), low: !p.archived && fmt.isLow(p) })));
 }));
 
-/* POST /api/staff/products  { sku, name, category, type, price, lowStockLevel, stock } */
+/* POST /api/staff/products  { sku, name, category, type, price, lowStockLevel, stock, specs?, description? } */
 r.post("/products", route(async (req, res) => {
   const b = req.body;
   const data = {
     sku: check.sku(b.sku), name: check.text(b.name, "Name", { min: 2, max: 120 }),
     category: check.oneOf(b.category, "Category", ["part", "accessory", "prebuilt"]), type: check.text(b.type, "Type", { min: 2, max: 60 }),
     price: check.int(b.price, "Price", { min: 1, max: 10_000_000 }), lowStockLevel: check.int(b.lowStockLevel ?? 0, "Low-stock level", { min: 0, max: 100_000 }),
-    stock: check.int(b.stock ?? 0, "Starting stock", { min: 0, max: 100_000 }), condition: "new", art: "box", specs: {}
+    stock: check.int(b.stock ?? 0, "Starting stock", { min: 0, max: 100_000 }), condition: "new", art: "box",
+    specs: b.specs === undefined ? [] : check.specs(b.specs),
+    description: b.description ? check.text(b.description, "Description", { min: 0, max: 2000 }) : ""
   };
   const old = await prisma.product.findUnique({ where: { sku: data.sku } });
   if (old) throw conflict("SKU_TAKEN", old.archived ? "That SKU belongs to a hidden product. Restore it in Inventory (Hidden) instead." : "That SKU already exists.");
@@ -76,7 +78,7 @@ r.post("/products", route(async (req, res) => {
   res.status(201).json(true);
 }));
 
-/* PUT /api/staff/products/:sku  { name, type, price, lowStockLevel }  (stock only changes through restock, orders, deliveries) */
+/* PUT /api/staff/products/:sku  { name, type, price, lowStockLevel, specs, description, archived }  (stock only changes through restock, orders, deliveries) */
 r.put("/products/:sku", route(async (req, res) => {
   const p = await prisma.product.findUnique({ where: { sku: req.params.sku } });
   if (!p) throw notFound(`Product ${req.params.sku} not found`);
@@ -85,6 +87,8 @@ r.put("/products/:sku", route(async (req, res) => {
   if (b.type !== undefined) data.type = check.text(b.type, "Type", { min: 2, max: 60 });
   if (b.price !== undefined) data.price = check.int(b.price, "Price", { min: 1, max: 10_000_000 });
   if (b.lowStockLevel !== undefined) data.lowStockLevel = check.int(b.lowStockLevel, "Low-stock level", { min: 0, max: 100_000 });
+  if (b.specs !== undefined) data.specs = check.specs(b.specs); // staff only: this whole router needs a staff login
+  if (b.description !== undefined) data.description = typeof b.description === "string" && b.description.trim() ? check.text(b.description, "Description", { min: 0, max: 2000 }) : "";
   if (b.archived !== undefined) data.archived = b.archived === true; // false = put a hidden product back on the store
   await prisma.product.update({ where: { sku: p.sku }, data });
   res.json(true);

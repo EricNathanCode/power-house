@@ -15,7 +15,7 @@ function createApp() {
   if (secret.length < 32 || secret.startsWith("change-me")) throw new Error("Set SESSION_SECRET in .env to a long random value (see .env.example).");
 
   const app = express();
-  app.disable("x-powered-by");
+  app.set("trust proxy", 1);
 
   // security headers. The website pages use small inline scripts, so the strict content policy is off for now.
   app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: { policy: "same-site" } }));

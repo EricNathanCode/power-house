@@ -336,6 +336,26 @@ test("D7/D10 + SIMULATED supplier: low stock, reorder, ship, receive", async () 
   assert.equal(list.body[0].status, "DELIVERED");
 });
 
+test("staff set the target stock per product (empty = automatic 3 x low level)", async () => {
+  const staff = client();
+  await staff("POST", "/api/staff/login", { username: "staff01", password: "staff123" });
+  const get = async () => (await staff("GET", "/api/staff/products")).body.find((p) => p.sku === "CPU-6C-12T");
+  assert.equal((await get()).targetStock, 9, "automatic: 3 x low level 3");
+  assert.equal((await get()).targetLevel, null);
+  assert.equal((await staff("PUT", "/api/staff/products/CPU-6C-12T", { targetLevel: 20 })).status, 200);
+  assert.equal((await get()).targetStock, 20);
+  assert.equal((await staff("PUT", "/api/staff/products/CPU-6C-12T", { targetLevel: 3 })).status, 400, "must be above the low level");
+  assert.equal((await staff("PUT", "/api/staff/products/CPU-6C-12T", { lowStockLevel: 25 })).status, 400, "raising the low level above the target is refused too");
+  // low stock suggestion fills up to the staff target
+  await staff("PUT", "/api/staff/products/CPU-6C-12T", { lowStockLevel: 10 });
+  const low = (await staff("GET", "/api/staff/low-stock")).body.find((p) => p.sku === "CPU-6C-12T");
+  assert.equal(low.suggestedQty, Math.max(low.supplier.minOrderQty, 20 - low.stock));
+  assert.equal((await staff("PUT", "/api/staff/products/CPU-6C-12T", { targetLevel: "", lowStockLevel: 3 })).status, 200);
+  assert.equal((await get()).targetStock, 9, "empty = back to automatic");
+  assert.equal((await staff("POST", "/api/staff/products", { sku: "TGT-NEW-1", name: "Target test", category: "part", type: "RAM", price: 100, lowStockLevel: 5, targetLevel: 4 })).status, 400);
+  assert.equal((await staff("POST", "/api/staff/products", { sku: "TGT-NEW-1", name: "Target test", category: "part", type: "RAM", price: 100, lowStockLevel: 5, targetLevel: 40 })).status, 201);
+});
+
 test("reorder ANY product: new items join the supplier catalog with the cost staff enter", async () => {
   const staff = client();
   await staff("POST", "/api/staff/login", { username: "staff01", password: "staff123" });

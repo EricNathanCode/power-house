@@ -279,8 +279,9 @@
       <div class="row" style="gap:16px"><div class="field grow"><label for="f-cat">Category</label><select id="f-cat" ${isNew ? "" : "disabled"}>${Object.entries(CAT).map(([v, l]) => `<option value="${v}" ${p.category === v ? "selected" : ""}>${l}</option>`).join("")}</select></div>
       <div class="field grow"><label for="f-type">Type</label><input id="f-type" value="${esc(p.type)}" placeholder="e.g. RAM"></div></div>
       <div class="row" style="gap:16px"><div class="field grow"><label for="f-price">Price (₱)</label><input id="f-price" type="number" min="1" value="${p.price}"></div>
-      ${isNew ? `<div class="field grow"><label for="f-stock">Starting stock</label><input id="f-stock" type="number" min="0" value="0"></div>` : ""}
-      <div class="field grow"><label for="f-low">Low-stock level</label><input id="f-low" type="number" min="0" value="${p.lowStockLevel}"></div></div>
+      ${isNew ? `<div class="field grow"><label for="f-stock">Starting stock</label><input id="f-stock" type="number" min="0" value="0"></div>` : ""}</div>
+      <div class="row" style="gap:16px"><div class="field grow"><label for="f-low">Low-stock level</label><input id="f-low" type="number" min="0" value="${p.lowStockLevel}"><div class="help">At or below this, it shows as Low.</div></div>
+      <div class="field grow"><label for="f-target">Target stock</label><input id="f-target" type="number" min="1" value="${p.targetLevel ?? ""}" placeholder="Auto"><div class="help" id="f-target-h"></div></div></div>
       <div class="field"><span class="lab" id="f-specs-l">Specs</span>
         <div class="spec-rows" id="f-specs" role="group" aria-labelledby="f-specs-l"></div>
         <button type="button" class="btn xs" id="f-spec-add">${ico("plus", 14, "currentColor")}Add spec</button>
@@ -338,6 +339,10 @@
           rows.innerHTML = ""; Object.keys(same.specs).forEach((k) => addRow(k, ""));
         });
       }).catch(() => {});
+      /* target help: reorders fill up to the target; empty = automatic 3 x low level (shown live) */
+      const lowBox = o.querySelector("#f-low"), tBox = o.querySelector("#f-target");
+      const tHelp = () => { const low = Number(lowBox.value) || 0, auto = Math.max(low * 3, low + 1); tBox.placeholder = `Auto: ${auto}`; o.querySelector("#f-target-h").textContent = tBox.value === "" ? `Reorders fill up to this. Empty = automatic (3 × low level = ${auto}).` : "Reorders fill up to this. Clear it to go back to automatic."; };
+      lowBox.addEventListener("input", tHelp); tBox.addEventListener("input", tHelp); tHelp();
       const desc = o.querySelector("#f-desc");
       desc.addEventListener("input", () => { o.querySelector("#f-desc-n").textContent = desc.value.length; });
       const del = o.querySelector("#f-del");
@@ -351,9 +356,10 @@
         e.preventDefault();
         const v = (id) => o.querySelector(id) && o.querySelector(id).value.trim();
         const specRows = readSpecs();
-        const data = { name: v("#f-name"), type: v("#f-type"), price: Number(v("#f-price")), lowStockLevel: Number(v("#f-low")), specs: Object.fromEntries(specRows), description: v("#f-desc") };
+        const data = { name: v("#f-name"), type: v("#f-type"), price: Number(v("#f-price")), lowStockLevel: Number(v("#f-low")), targetLevel: v("#f-target") === "" ? null : Number(v("#f-target")), specs: Object.fromEntries(specRows), description: v("#f-desc") };
         const labels = specRows.map(([k]) => k.toLowerCase());
         let err = !data.name ? "Enter a name." : !data.type ? "Enter a type." : !(data.price > 0) ? "Price must be above ₱0." : !(data.lowStockLevel >= 0) ? "Low-stock level can't be negative." : "";
+        if (!err && data.targetLevel !== null && !(Number.isInteger(data.targetLevel) && data.targetLevel > data.lowStockLevel)) err = `Target stock must be a whole number above the low-stock level (${data.lowStockLevel}), or leave it empty for automatic.`;
         if (!err && specRows.some(([k, x]) => !k || !x)) err = "Specs: every row needs a label and a value (or clear both).";
         if (!err && new Set(labels).size !== labels.length) err = "Specs: each label can only be used once.";
         if (isNew) { data.sku = v("#f-sku").toUpperCase(); data.category = v("#f-cat"); data.stock = Number(v("#f-stock")) || 0; if (!err && !/^[A-Z0-9-]{4,}$/.test(data.sku)) err = "SKU: at least 4 capital letters, numbers or dashes."; }

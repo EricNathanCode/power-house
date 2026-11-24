@@ -57,10 +57,16 @@ r.put("/orders/:id/cancel", route(async (req, res) => res.json(await orders.canc
 r.get("/products", route(async (req, res) => {
   const list = await prisma.product.findMany({ include: { supplierProduct: true }, orderBy: { createdAt: "asc" } });
   res.json(list.map((p) => ({
-    ...fmt.product(p), targetStock: fmt.targetStock(p), low: !p.archived && fmt.isLow(p),
+    ...fmt.product(p), targetStock: fmt.targetStock(p), targetLevel: p.targetLevel, low: !p.archived && fmt.isLow(p),
     supplier: p.supplierProduct ? { supplierSku: p.supplierProduct.supplierSku, unitPrice: p.supplierProduct.unitPrice, minOrderQty: p.supplierProduct.minOrderQty } : null
   })));
 }));
+
+/* target stock: a whole number, or empty / null = automatic (3 x low level). It must be above the low-stock level. */
+const targetFrom = (v) => (v === undefined || v === null || v === "" ? null : check.int(v, "Target stock", { min: 1, max: 100_000 }));
+function targetAboveLow(target, low) {
+  if (target !== null && target !== undefined && target <= low) throw new ApiError(400, "BAD_INPUT", `Target stock must be above the low-stock level (${low}).`, { field: "Target stock" });
+}
 
 /* POST /api/staff/products  { sku, name, category, type, price, lowStockLevel, stock, specs?, description? } */
 r.post("/products", route(async (req, res) => {
@@ -71,8 +77,10 @@ r.post("/products", route(async (req, res) => {
     price: check.int(b.price, "Price", { min: 1, max: 10_000_000 }), lowStockLevel: check.int(b.lowStockLevel ?? 0, "Low-stock level", { min: 0, max: 100_000 }),
     stock: check.int(b.stock ?? 0, "Starting stock", { min: 0, max: 100_000 }), condition: "new", art: "box",
     specs: b.specs === undefined ? [] : check.specs(b.specs),
+    targetLevel: targetFrom(b.targetLevel),
     description: b.description ? check.text(b.description, "Description", { min: 0, max: 2000 }) : ""
   };
+  targetAboveLow(data.targetLevel, data.lowStockLevel);
   const old = await prisma.product.findUnique({ where: { sku: data.sku } });
   if (old) throw conflict("SKU_TAKEN", old.archived ? "That SKU belongs to a hidden product. Restore it in Inventory (Hidden) instead." : "That SKU already exists.");
   await prisma.$transaction(async (tx) => {
@@ -94,6 +102,8 @@ r.put("/products/:sku", route(async (req, res) => {
   if (b.specs !== undefined) data.specs = check.specs(b.specs); // staff only: this whole router needs a staff login
   if (b.description !== undefined) data.description = typeof b.description === "string" && b.description.trim() ? check.text(b.description, "Description", { min: 0, max: 2000 }) : "";
   if (b.archived !== undefined) data.archived = b.archived === true; // false = put a hidden product back on the store
+  if (b.targetLevel !== undefined) data.targetLevel = targetFrom(b.targetLevel);
+  targetAboveLow(data.targetLevel !== undefined ? data.targetLevel : p.targetLevel, data.lowStockLevel ?? p.lowStockLevel);
   await prisma.product.update({ where: { sku: p.sku }, data });
   res.json(true);
 }));

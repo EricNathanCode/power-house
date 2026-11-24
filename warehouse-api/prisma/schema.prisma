@@ -78,6 +78,7 @@ model Product {
   price         Int // whole pesos
   stock         Int              @default(0)
   lowStockLevel Int              @default(0) // each product has its own low-stock level (D7)
+  targetLevel   Int? // how many staff want on the shelf after a restock; empty = automatic (3 x low level)
   condition     ProductCondition @default(new)
   art           String           @default("box") // which drawing the website shows
   specs         Json             @default("{}") // { "Socket": "AM4" } from the sample data, or [["Socket","AM4"], ...] when staff edit it (a list keeps the order staff chose)

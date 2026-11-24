@@ -18,7 +18,9 @@ function phTime(d) {
   return new Date(d.getTime() + 8 * 3600e3).toISOString().slice(0, 19) + "+08:00";
 }
 
-const targetStock = (p) => Math.max(p.lowStockLevel * 3, p.lowStockLevel + 1);
+// target = the "full" level a reorder fills up to. Staff can set it per product; empty = automatic 3 x low level.
+const autoTarget = (low) => Math.max(low * 3, low + 1);
+const targetStock = (p) => (p.targetLevel ?? autoTarget(p.lowStockLevel));
 const isLow = (p) => p.lowStockLevel > 0 && p.stock <= p.lowStockLevel;
 
 const product = (p) => ({
@@ -67,6 +69,6 @@ const TRADE_INCLUDE = { history: { orderBy: [{ at: "asc" }, { id: "asc" }] }, ph
 
 module.exports = {
   ORDER_LABEL, ORDER_CODE, ORDER_STEPS, TRADE_LABEL, CONDITION_CODE, OFFER_PCT, TRADE_CATEGORY_CODE,
-  ORDER_INCLUDE, TRADE_INCLUDE, phTime, targetStock, isLow,
+  ORDER_INCLUDE, TRADE_INCLUDE, phTime, targetStock, autoTarget, isLow,
   product, customer, order, tradeIn, purchaseOrder, movement
 };

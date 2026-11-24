@@ -124,7 +124,7 @@ PH.SEED = {
     { id: "MOV-0011", sku: "MS-WL-01", change: -1, reason: "sale", refId: "ORD-0001", at: "2026-11-06T08:30:00" }
   ],
 
-  settings: { supplierOnline: true, supplierName: "[Supplier name TBD]" }
+  settings: { supplierOnline: true, supplierName: "Supplier" }
 };
 
 // Cities for the type-to-search field (sample list, Cavite and nearby)

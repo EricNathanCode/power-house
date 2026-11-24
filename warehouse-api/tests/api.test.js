@@ -336,6 +336,30 @@ test("D7/D10 + SIMULATED supplier: low stock, reorder, ship, receive", async () 
   assert.equal(list.body[0].status, "DELIVERED");
 });
 
+test("reorder ANY product: new items join the supplier catalog with the cost staff enter", async () => {
+  const staff = client();
+  await staff("POST", "/api/staff/login", { username: "staff01", password: "staff123" });
+  await staff("POST", "/api/staff/products", { sku: "REAL-NEW-01", name: "Brand-new real item", category: "accessory", type: "Mouse", price: 1000, stock: 0 });
+  const listed = (await staff("GET", "/api/staff/products")).body.find((p) => p.sku === "REAL-NEW-01");
+  assert.equal(listed.supplier, null, "not in the supplier catalog yet");
+  assert.equal((await staff("POST", "/api/staff/purchase-orders", { sku: "REAL-NEW-01", qty: 5 })).body.error.code, "NO_SUPPLIER", "needs a unit cost first");
+  assert.equal((await staff("POST", "/api/staff/purchase-orders", { sku: "NOPE-99", qty: 5, unitPrice: 10 })).status, 404);
+  const po = await staff("POST", "/api/staff/purchase-orders", { sku: "REAL-NEW-01", qty: 5, unitPrice: 600 });
+  assert.equal(po.status, 201);
+  const sup = (await staff("GET", "/api/staff/products")).body.find((p) => p.sku === "REAL-NEW-01").supplier;
+  assert.deepEqual(sup, { supplierSku: "SUP-REAL-NEW-01", unitPrice: 600, minOrderQty: 1 });
+  // next time the saved cost is used; a new cost updates it
+  const po2 = await staff("POST", "/api/staff/purchase-orders", { sku: "REAL-NEW-01", qty: 2, unitPrice: 650 });
+  const all = (await staff("GET", "/api/staff/purchase-orders")).body;
+  assert.equal(all.find((x) => x.poNumber === po2.body.poNumber).unitPrice, 650);
+  await staff("PUT", `/api/staff/purchase-orders/${po.body.poNumber}/ship`);
+  await staff("PUT", `/api/staff/purchase-orders/${po.body.poNumber}/receive`);
+  assert.equal(await stockOf("REAL-NEW-01"), 5, "delivery adds stock");
+  assert.equal((await staff("POST", "/api/staff/purchase-orders", { sku: "RAM-DDR4-16GB-USED", qty: 1, unitPrice: 900 })).body.error.code, "USED_ITEM", "used items come from trade-ins");
+  // a product that is not low can be reordered too
+  assert.equal((await staff("POST", "/api/staff/purchase-orders", { sku: "MON-24-144", qty: 5 })).status, 201);
+});
+
 test("Sell to Us: submit, offer, accept / decline, receive, add to stock", async () => {
   const cust = client(), staff = client();
   await cust("POST", "/api/auth/login", { email: "test1@example.com", password: "sample123" });

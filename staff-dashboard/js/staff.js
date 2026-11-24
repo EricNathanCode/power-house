@@ -19,7 +19,9 @@
   $("#theme").onclick = () => theme.set(theme.get() === "dark" ? "light" : "dark");
   $("#logout").onclick = () => { PH.session.staffLogout(); location.href = "login.html"; };
 
-  const tabsHtml = (on) => `<nav class="tabs" aria-label="Dashboard sections">${TABS.map(([id, l]) => `<a class="tab ${id === on ? "on" : ""}" href="#${id}" ${id === on ? 'aria-current="page"' : ""}>${l}</a>`).join("")}</nav>`;
+  // last known to-do counts are drawn right away; badges() refreshes them after every page change
+  const tabBadge = (id) => { const n = lastCounts && lastCounts[id]; return n ? `<span class="tbadge">${n > 99 ? "99+" : n}</span>` : ""; };
+  const tabsHtml = (on) => `<nav class="tabs" aria-label="Dashboard sections">${TABS.map(([id, l]) => `<a class="tab ${id === on ? "on" : ""}" href="#${id}" ${id === on ? 'aria-current="page"' : ""}>${l}${tabBadge(id)}</a>`).join("")}</nav>`;
   async function kpis() {
     const [orders, inv, trades] = await Promise.all([PH.api.allOrders(), PH.api.inventory(), PH.api.allTradeIns()]);
     const today = new Date().toDateString();
@@ -138,7 +140,7 @@
           <td>${p.supplier ? p.supplier.minOrderQty : "—"}</td>
           <td>${p.supplier ? `<label class="sr-only" for="q-${esc(p.sku)}">Order quantity</label><input type="number" id="q-${esc(p.sku)}" min="${p.supplier.minOrderQty}" value="${p.suggestedQty}" style="width:90px;height:40px" data-qty="${esc(p.sku)}" data-unit="${p.supplier.unitPrice}">` : "—"}</td>
           <td data-cost="${esc(p.sku)}">${p.supplier ? money(p.suggestedQty * p.supplier.unitPrice) : "—"}</td>
-          <td>${p.supplier ? `<button class="btn p xs" data-approve="${esc(p.sku)}">Approve reorder</button>${p.openPo ? `<div class="small muted" style="margin-top:4px">${esc(p.openPo)} already open</div>` : ""}` : '<span class="small muted">Built in-house</span>'}</td></tr>`).join("") || `<tr><td colspan="9" style="text-align:center;padding:28px"><b>Nothing is low.</b> <span class="muted">Every product is above its own low-stock level.</span></td></tr>`}
+          <td>${p.supplier ? `<button class="btn p xs" data-approve="${esc(p.sku)}">Approve reorder</button>` : `<button class="btn xs" data-newreorder="${esc(p.sku)}">Reorder…</button><div class="small muted" style="margin-top:4px">Not in supplier catalog</div>`}${p.openPo ? `<div class="small muted" style="margin-top:4px">${esc(p.openPo)} already open</div>` : ""}</td></tr>`).join("") || `<tr><td colspan="9" style="text-align:center;padding:28px"><b>Nothing is low.</b> <span class="muted">Every product is above its own low-stock level.</span></td></tr>`}
         </tbody></table></div></div>
         <div class="note" style="margin-top:18px">Suggested order = the larger of the supplier minimum and (target stock − current stock). Staff can change it before approving. The order goes to the fictional supplier (SIMULATED).</div>`);
     },
@@ -146,8 +148,9 @@
     async reorders() {
       const [pos, set, inv] = await Promise.all([PH.api.purchaseOrders(), PH.api.settings(), PH.api.inventory()]);
       return page("Reorders", "reorders", `
-        <div class="note row keep between center wrapflex" style="margin-top:18px;gap:14px"><span>Supplier: <b>${esc(set.supplierName)} (Fictional company: simulated supplier)</b>. Mock API, not a real company.</span>
+        <div class="note row keep between center wrapflex" style="margin-top:18px;gap:14px"><span><b>${esc(set.supplierName)}</b> · fictional company, SIMULATED supplier (mock API, not a real company)</span>
           <label class="row keep center" style="gap:10px;margin:0;color:var(--ink)">Supplier online <span class="toggle"><input type="checkbox" id="sup" ${set.supplierOnline ? "checked" : ""}><span></span></span></label></div>
+        <div class="row keep between center wrapflex" style="margin-top:18px;gap:12px"><span class="small muted">Pick any product from the inventory to order more of it.</span><button class="btn p sm" data-newreorder="">${ico("plus", 18, "currentColor")}New reorder</button></div>
         <div class="card table-card" style="margin-top:18px"><div class="table-wrap"><table><thead><tr><th>PO</th><th>Our SKU</th><th>Supplier SKU</th><th>Qty</th><th>Unit price</th><th>Total</th><th>Status</th><th>Approved</th><th><span class="sr-only">Action</span></th></tr></thead><tbody>
         ${pos.map((po) => `<tr><td class="nowrap"><b>${esc(po.poNumber)}</b></td><td class="small nowrap">${esc(po.sku)}<div class="muted">${esc((inv.find((p) => p.sku === po.sku) || {}).name || "")}</div></td><td class="small">${esc(po.supplierSku)}</td><td>${po.qty}</td><td>${money(po.unitPrice)}</td><td>${money(po.qty * po.unitPrice)}</td>
           <td>${statusBadge(po.status)}${po.status === "DELIVERED" ? ` <span class="small muted">+${po.qty} stock</span>` : ""}</td><td class="small">${date(po.createdAt)} · ${esc(po.approvedBy)}</td>
@@ -217,8 +220,42 @@
       if (e.code === "STAFF_ONLY") { location.href = "login.html"; return; }
       $("#app").innerHTML = `<div class="note bad">${esc(errorText(e))}</div>`;
     }
-    document.title = (TABS.find((t) => t[0] === tab) || TABS[0])[1] + " · Power House Staff Portal";
+    baseTitle = (TABS.find((t) => t[0] === tab) || TABS[0])[1] + " · Power House Staff Portal";
+    badges();
   }
+
+  /* to-do counts on the tabs (same numbers as the Overview tiles). Checked again every 30 s while the page is open,
+     so a new order shows up without reloading. */
+  let baseTitle = document.title, lastCounts = null;
+  async function badges() {
+    let c;
+    try {
+      const [orders, inv, trades, pos] = await Promise.all([PH.api.allOrders(), PH.api.inventory(), PH.api.allTradeIns(), PH.api.purchaseOrders()]);
+      c = {
+        orders: orders.filter((o) => ["Placed", "Packing"].includes(o.status)).length, // orders to pack
+        "low-stock": inv.filter((p) => p.low).length, // low on stock
+        "trade-ins": trades.filter((t) => t.status === "Under review").length, // trade-ins to review
+        "stock-log": pos.filter((p) => p.status === "SHIPPED").length // deliveries on the way
+      };
+    } catch (e) { return; } // offline or logged out: leave the badges as they are
+    const label = { orders: "to pack", "low-stock": "low", "trade-ins": "to review", "stock-log": "on the way" };
+    for (const [id, n] of Object.entries(c)) {
+      const a = $(`.tabs a[href="#${id}"]`); if (!a) continue;
+      let b = a.querySelector(".tbadge");
+      if (!n) { if (b) b.remove(); continue; }
+      if (!b) { b = document.createElement("span"); b.className = "tbadge"; a.appendChild(b); }
+      b.textContent = n > 99 ? "99+" : n; b.setAttribute("aria-label", `${n} ${label[id]}`);
+      if (lastCounts && n > (lastCounts[id] || 0)) { b.classList.remove("bump"); void b.offsetWidth; b.classList.add("bump"); }
+    }
+    if (lastCounts && c.orders > lastCounts.orders) toast(`New order! ${c.orders} to pack.`);
+    if (lastCounts && c["trade-ins"] > lastCounts["trade-ins"]) toast("New trade-in to review.");
+    const changed = lastCounts && Object.keys(c).some((k) => c[k] !== lastCounts[k]);
+    lastCounts = c;
+    if (changed && ["", "#overview"].includes(location.hash)) route(); // the Overview tiles show the same numbers: redraw them (other tabs keep what staff are typing)
+    document.title = (c.orders ? `(${c.orders}) ` : "") + baseTitle; // the browser tab shows orders to pack too
+  }
+  setInterval(() => { if (document.visibilityState === "visible") badges(); }, 30000);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") badges(); });
   const refresh = () => route();
 
   /* trade-in photos from the customer: small thumbnails, click to see them big */
@@ -337,6 +374,57 @@
       });
     });
   }
+  /* New reorder: staff pick ANY product from the inventory (not only low ones).
+     Not in the supplier's catalog yet -> staff enter the unit cost they agreed; it's added on the first order. */
+  async function reorderForm(preSku) {
+    if (document.querySelector(".overlay")) return;
+    const inv = (await PH.api.inventory()).filter((p) => !p.archived && p.condition !== "used"); // used stock only comes from trade-ins
+    const rank = (p) => (p.stock <= 0 ? 0 : p.low ? 1 : 2);
+    inv.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
+    const tag = (p) => (p.stock <= 0 ? " · SOLD OUT" : p.low ? " · LOW" : "");
+    const pre = inv.find((p) => p.sku === preSku) || inv[0];
+    modal(`<h2>New reorder</h2><p class="small muted">Order more stock from the supplier (SIMULATED). Low and sold-out items are listed first.</p>
+      <form id="nf" novalidate style="margin-top:16px">
+        <div class="field"><label for="n-sku">Product</label><select id="n-sku">${inv.map((p) => `<option value="${esc(p.sku)}" ${p === pre ? "selected" : ""}>${esc(p.name)} · ${esc(p.sku)} · ${p.stock} in stock${tag(p)}</option>`).join("")}</select></div>
+        <div class="inset" id="n-info" style="padding:14px 16px;margin-bottom:20px"></div>
+        <div class="row" style="gap:16px"><div class="field grow"><label for="n-qty">Quantity</label><input id="n-qty" type="number" min="1"></div>
+          <div class="field grow"><label for="n-cost">Unit cost (₱)</label><input id="n-cost" type="number" min="1"><div class="help" id="n-cost-h"></div></div></div>
+        <div class="leader"><span>Total cost</span><span class="fill"></span><b id="n-total">₱0</b></div>
+        <div class="err hidden" id="n-err"></div>
+        <div class="actions"><button type="button" class="btn" data-close>Cancel</button><button class="btn p grow" id="n-go">Send to supplier</button></div></form>`, (o, close) => {
+      const $o = (s) => o.querySelector(s);
+      const cur = () => inv.find((p) => p.sku === $o("#n-sku").value);
+      const total = () => { $o("#n-total").textContent = money((Number($o("#n-qty").value) || 0) * (Number($o("#n-cost").value) || 0)); };
+      const fill = () => {
+        const p = cur(), s = p.supplier;
+        const min = s ? s.minOrderQty : 1;
+        const suggest = Math.max(min, p.targetStock - p.stock, 1);
+        $o("#n-info").innerHTML = `<div class="row keep between wrapflex" style="gap:8px"><b>${esc(p.name)}</b>${invBadge(p)}</div>
+          <div class="small muted" style="margin-top:6px">Stock ${p.stock} · low level ${p.lowStockLevel} · target ${p.targetStock} · selling price ${money(p.price)}</div>
+          <div class="small" style="margin-top:6px">${s ? `Supplier code ${esc(s.supplierSku)} · minimum order ${s.minOrderQty}` : `<span style="color:var(--low)">${ico("alert", 14)} Not in the supplier's catalog yet.</span> Enter the unit cost you agreed; it will be saved for next time.`}</div>`;
+        $o("#n-qty").min = min; $o("#n-qty").value = suggest;
+        $o("#n-cost").value = s ? s.unitPrice : "";
+        $o("#n-cost-h").textContent = s ? "Change it if the supplier's price changed." : "Required for a new item.";
+        $o("#n-err").classList.add("hidden"); total();
+      };
+      $o("#n-sku").addEventListener("change", fill);
+      $o("#n-qty").addEventListener("input", total); $o("#n-cost").addEventListener("input", total);
+      fill();
+      $o("#nf").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const p = cur(), min = p.supplier ? p.supplier.minOrderQty : 1;
+        const qty = Number($o("#n-qty").value), cost = Number($o("#n-cost").value);
+        const err = !(Number.isInteger(qty) && qty >= min) ? `Quantity: at least ${min}.` : !(Number.isInteger(cost) && cost > 0) ? "Enter the unit cost in whole pesos." : cost >= p.price ? `The unit cost should be below the selling price (${money(p.price)}).` : "";
+        const box = $o("#n-err"); box.textContent = err; box.classList.toggle("hidden", !err); if (err) return;
+        const go = $o("#n-go"); busy(go, true, "Sending…");
+        try {
+          const r = await PH.api.approveReorder(p.sku, qty, p.supplier && cost === p.supplier.unitPrice ? undefined : cost);
+          close(); toast(`${r.poNumber} sent to the supplier (simulated): ${qty} × ${p.name}`);
+          if (location.hash !== "#reorders") location.hash = "reorders"; else refresh();
+        } catch (x) { busy(go, false); box.textContent = errorText(x); box.classList.remove("hidden"); }
+      });
+    });
+  }
   function restockForm(p) {
     modal(`<h2>Restock</h2><p class="muted">${esc(p.name)} · now ${p.stock} in stock</p><form id="rf" novalidate>
       <div class="field" style="margin-top:18px"><label for="r-qty">Units to add</label><input id="r-qty" type="number" min="1" value="1"><div class="help">For a count fix or a local purchase. Supplier orders go through Low stock.</div></div>
@@ -363,6 +451,7 @@
     if (d.edit) productForm((await PH.api.inventory()).find((p) => p.sku === d.edit));
     if (d.restore) run(() => PH.api.restoreProduct(d.restore), "Back on the store");
     if (d.restock) restockForm((await PH.api.inventory()).find((p) => p.sku === d.restock));
+    if (d.newreorder !== undefined) { reorderForm(d.newreorder); return; }
     if (d.approve) { const q = Number($(`[data-qty="${d.approve}"]`).value); run(async () => { const r = await PH.api.approveReorder(d.approve, q); toast(`${r.poNumber} sent to the supplier (simulated)`); }); }
     if (d.ship) run(() => PH.api.markShipped(d.ship), `${d.ship} marked shipped`);
     if (d.receive) run(() => PH.api.receiveDelivery(d.receive), `${d.receive} received, stock added`);

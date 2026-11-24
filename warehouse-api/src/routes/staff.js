@@ -55,8 +55,11 @@ r.put("/orders/:id/cancel", route(async (req, res) => res.json(await orders.canc
 
 /* GET /api/staff/products  (with target stock + low flag) */
 r.get("/products", route(async (req, res) => {
-  const list = await prisma.product.findMany({ orderBy: { createdAt: "asc" } });
-  res.json(list.map((p) => ({ ...fmt.product(p), targetStock: fmt.targetStock(p), low: !p.archived && fmt.isLow(p) })));
+  const list = await prisma.product.findMany({ include: { supplierProduct: true }, orderBy: { createdAt: "asc" } });
+  res.json(list.map((p) => ({
+    ...fmt.product(p), targetStock: fmt.targetStock(p), low: !p.archived && fmt.isLow(p),
+    supplier: p.supplierProduct ? { supplierSku: p.supplierProduct.supplierSku, unitPrice: p.supplierProduct.unitPrice, minOrderQty: p.supplierProduct.minOrderQty } : null
+  })));
 }));
 
 /* POST /api/staff/products  { sku, name, category, type, price, lowStockLevel, stock, specs?, description? } */
@@ -190,21 +193,40 @@ r.get("/purchase-orders", route(async (req, res) => {
   res.json(list.map(fmt.purchaseOrder));
 }));
 
-/* POST /api/staff/purchase-orders  { sku, qty }  -> sent to the SIMULATED supplier */
+/* POST /api/staff/purchase-orders  { sku, qty, unitPrice? }  -> sent to the SIMULATED supplier
+   Staff can reorder ANY product in the inventory (not only low ones).
+   Not in the supplier's catalog yet (e.g. a new real product) -> unitPrice is required, and the product is added to the
+   catalog with that price and a minimum of 1. Already listed -> a unitPrice sent here becomes the new agreed price. */
 r.post("/purchase-orders", route(async (req, res) => {
   if (!(await supplierOnline())) throw new ApiError(503, "SUPPLIER_DOWN", "Supplier unavailable (simulated). Try again later.");
-  const sup = await prisma.supplierProduct.findUnique({ where: { sku: String(req.body.sku || "") }, include: { product: true } });
-  if (sup && sup.product.archived) throw conflict("HIDDEN_PRODUCT", "This product is hidden from the store. Restore it before reordering.");
-  if (!sup) throw new ApiError(400, "NO_SUPPLIER", "The supplier doesn't sell this item.");
-  if (!Number.isInteger(req.body.qty) || req.body.qty < sup.minOrderQty) throw new ApiError(400, "BELOW_MIN", `The supplier minimum is ${sup.minOrderQty}.`);
-  const qty = check.int(req.body.qty, "Quantity", { min: sup.minOrderQty, max: 100_000 });
+  const product = await prisma.product.findUnique({ where: { sku: String(req.body.sku || "") }, include: { supplierProduct: true } });
+  if (!product) throw notFound("Pick a product from the inventory.");
+  if (product.archived) throw conflict("HIDDEN_PRODUCT", "This product is hidden from the store. Restore it before reordering.");
+  if (product.condition === "used") throw new ApiError(400, "USED_ITEM", "Used items come from trade-ins (Sell to Us), not from the supplier.");
+  let sup = product.supplierProduct;
+  const price = req.body.unitPrice === undefined || req.body.unitPrice === null || req.body.unitPrice === "" ? null : check.int(req.body.unitPrice, "Unit cost", { min: 1, max: 10_000_000 });
+  if (!sup && price === null) throw new ApiError(400, "NO_SUPPLIER", "This product isn't in the supplier's catalog yet. Enter the unit cost you agreed with the supplier.");
+  const min = sup ? sup.minOrderQty : 1;
+  if (!Number.isInteger(req.body.qty) || req.body.qty < min) throw new ApiError(400, "BELOW_MIN", `The supplier minimum is ${min}.`);
+  const qty = check.int(req.body.qty, "Quantity", { min, max: 100_000 });
   const poNumber = await prisma.$transaction(async (tx) => {
+    if (!sup) sup = await tx.supplierProduct.create({ data: { supplierSku: await freeSupplierSku(tx, product.sku), sku: product.sku, unitPrice: price, minOrderQty: 1 } });
+    else if (price !== null && price !== sup.unitPrice) sup = await tx.supplierProduct.update({ where: { sku: product.sku }, data: { unitPrice: price } });
     const id = await nextId(tx, "PO");
     await tx.purchaseOrder.create({ data: { poNumber: id, sku: sup.sku, supplierSku: sup.supplierSku, qty, unitPrice: sup.unitPrice, status: "CONFIRMED", approvedBy: req.session.staff } });
     return id;
   }, TX);
   res.status(201).json({ poNumber });
 }));
+
+/* the supplier's own code for a product we add to its catalog: "SUP-" + our SKU (made unique if needed) */
+async function freeSupplierSku(tx, sku) {
+  const base = ("SUP-" + sku).slice(0, 40);
+  for (let n = 1; ; n++) {
+    const code = n === 1 ? base : `${base}-${n}`;
+    if (!(await tx.supplierProduct.findUnique({ where: { supplierSku: code } }))) return code;
+  }
+}
 
 /* PUT /api/staff/purchase-orders/:po/ship  (SIMULATED supplier step) */
 r.put("/purchase-orders/:po/ship", route(async (req, res) => {

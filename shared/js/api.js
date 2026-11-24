@@ -209,7 +209,8 @@ const API = (() => {
     async restock(sku, qty) { return request("POST", "/staff/products/" + enc(sku) + "/restock", { qty }); },
     async lowStock() { return withPhotos(await request("GET", "/staff/low-stock")); },
     /* reorders go to the SIMULATED supplier */
-    async approveReorder(sku, qty) { return request("POST", "/staff/purchase-orders", { sku, qty }); },
+    /* any product; unitPrice is needed when the product isn't in the supplier's catalog yet */
+    async approveReorder(sku, qty, unitPrice) { return request("POST", "/staff/purchase-orders", unitPrice === undefined ? { sku, qty } : { sku, qty, unitPrice }); },
     async purchaseOrders() { return request("GET", "/staff/purchase-orders"); },
     async markShipped(poNumber) { return request("PUT", "/staff/purchase-orders/" + enc(poNumber) + "/ship"); },
     async receiveDelivery(poNumber) { return request("PUT", "/staff/purchase-orders/" + enc(poNumber) + "/receive"); },

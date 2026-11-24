@@ -8,6 +8,12 @@ const { createApp } = require("../src/app");
 const { prisma } = require("../src/db");
 const { seed } = require("../prisma/seed");
 
+// The tests wipe the database and load the sample data. Never on the real data:
+// they only run in the separate "test" schema (npm test does this for you).
+if (!/[?&]schema=test(&|$)/.test(process.env.DATABASE_URL || "")) {
+  throw new Error('Refusing to run: the tests would wipe the real products. Use "npm test" (it runs in the separate "test" schema).');
+}
+
 let server, base;
 
 /* a tiny browser: remembers its own login cookie */
@@ -361,6 +367,39 @@ test("Sell to Us: submit, offer, accept / decline, receive, add to stock", async
   assert.ok(all.body.find((x) => x.id === "TRD-0002").note);
 });
 
+test("Sell to Us photos: optional, owner + staff only, up to 5, only while under review", async () => {
+  const cust = client();
+  await cust("POST", "/api/auth/login", { email: "test1@example.com", password: "sample123" });
+  const t = (await cust("POST", "/api/trade-ins", { category: "PC Parts", type: "Graphics card (GPU)", brand: "Sample", model: "Photo GPU", condition: "Good", askingPrice: 5000 })).body;
+  assert.ok(t.id, "a trade-in without photos is fine (they can bring it in)");
+  const login = async (path, body) => (await fetch(base + path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) })).headers.getSetCookie()[0].split(";")[0];
+  const custCookie = await login("/api/auth/login", { email: "test1@example.com", password: "sample123" });
+  const otherCookie = await login("/api/auth/login", { email: "test2@example.com", password: "sample123" });
+  const staffCookie = await login("/api/staff/login", { username: "staff01", password: "staff123" });
+  const png = Buffer.concat([Buffer.from("89504e470d0a1a0a0000000d4948445200000001000000010806000000" + "1f15c4890000000d49444154789c6360000002000154a24f5d0000000049454e44ae426082", "hex"), Buffer.alloc(64)]);
+  const send = (who, bytes = png, type = "image/png") => fetch(`${base}/api/trade-ins/${t.id}/photos`, { method: "POST", headers: { "content-type": type, ...(who ? { cookie: who } : {}) }, body: bytes });
+  assert.equal((await send("")).status, 401);
+  assert.equal((await send(otherCookie)).status, 404, "another customer can't add photos");
+  assert.equal((await send(custCookie, Buffer.alloc(300, 7))).status, 400, "fake image refused");
+  let last;
+  for (let i = 0; i < 5; i++) { last = await send(custCookie); assert.equal(last.status, 201); }
+  assert.equal((await send(custCookie)).status, 409, "6th photo refused");
+  const saved = await last.json();
+  assert.equal(saved.photos, 5);
+  assert.equal(saved.photoUrls.length, 5);
+  const url = base + "/api" + saved.photoUrls[0];
+  assert.equal((await fetch(url, { headers: { cookie: custCookie } })).status, 200, "owner can see it");
+  assert.equal((await fetch(url, { headers: { cookie: staffCookie } })).headers.get("content-type"), "image/png", "staff can see it");
+  assert.equal((await fetch(url, { headers: { cookie: otherCookie } })).status, 404, "other customers can't");
+  assert.equal((await fetch(url)).status, 404, "strangers can't");
+  const staff = client();
+  await staff("POST", "/api/staff/login", { username: "staff01", password: "staff123" });
+  assert.equal((await staff("GET", "/api/staff/trade-ins")).body.find((x) => x.id === t.id).photoUrls.length, 5);
+  await staff("PUT", `/api/staff/trade-ins/${t.id}/reject`, { note: "test" });
+  const late = await fetch(`${base}/api/trade-ins/${t.id}/photos`, { method: "POST", headers: { "content-type": "image/png", cookie: custCookie }, body: png });
+  assert.equal(late.status, 409, "no new photos after staff answered");
+});
+
 test("too many login tries get blocked for a while", async () => {
   process.env.LOGIN_RATE_LIMIT = "3";
   const small = createApp().listen(0);
@@ -376,12 +415,3 @@ test("too many login tries get blocked for a while", async () => {
   assert.deepEqual(statuses, [401, 401, 401, 429, 429]);
 });
 
-test("demo reset puts the sample data back", async () => {
-  const api = client();
-  const r = await api("POST", "/api/demo/reset");
-  assert.equal(r.status, process.env.ALLOW_DEMO_RESET === "true" ? 200 : 403);
-  if (r.status === 200) {
-    assert.equal(await prisma.order.count(), 7);
-    assert.equal(await stockOf("MON-24-144"), 6);
-  }
-});

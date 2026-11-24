@@ -65,6 +65,21 @@ async function submit(customerId, b) {
   }, TX);
 }
 
+/* the customer adds a photo of the item (optional, up to 5) while staff haven't answered yet */
+const MAX_PHOTOS = 5;
+async function addPhoto(customerId, id, { mime, data }) {
+  const t = await load(id);
+  if (t.customerId !== customerId) throw notFound("Trade-in not found.");
+  if (t.status !== "UNDER_REVIEW") throw conflict("BAD_STEP", "Photos can only be added while staff are still reviewing it.");
+  return prisma.$transaction(async (tx) => {
+    const n = await tx.tradeInPhoto.count({ where: { tradeInId: id } });
+    if (n >= MAX_PHOTOS) throw conflict("TOO_MANY_PHOTOS", `Up to ${MAX_PHOTOS} photos per item.`);
+    await tx.tradeInPhoto.create({ data: { tradeInId: id, mime, data } });
+    await tx.tradeIn.update({ where: { id }, data: { photos: n + 1 } });
+    return fmt.tradeIn(await load(id, tx));
+  }, TX);
+}
+
 async function answer(customerId, id, accept) {
   const t = await load(id);
   if (t.customerId !== customerId) throw notFound("Trade-in not found.");
@@ -127,4 +142,4 @@ async function addToStock(id, price) {
   return { sku };
 }
 
-module.exports = { suggestOffer, load, submit, answer, sendOffer, reject, markReceived, addToStock };
+module.exports = { suggestOffer, load, submit, addPhoto, answer, sendOffer, reject, markReceived, addToStock };

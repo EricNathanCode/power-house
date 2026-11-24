@@ -250,10 +250,25 @@ model TradeIn {
   customer     Customer         @relation(fields: [customerId], references: [id])
   stockProduct Product?         @relation(fields: [stockSku], references: [sku])
   history      TradeInHistory[]
+  photoFiles   TradeInPhoto[]
 
   @@index([customerId])
   @@index([status])
   @@map("trade_ins")
+}
+
+// photos the customer took of the item, so staff can check it is real before making an offer.
+// Only the customer who sent them and staff can see them.
+model TradeInPhoto {
+  id        Int      @id @default(autoincrement())
+  tradeInId String
+  mime      String // image/jpeg, image/png or image/webp
+  data      Bytes
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  tradeIn   TradeIn  @relation(fields: [tradeInId], references: [id], onDelete: Cascade)
+
+  @@index([tradeInId])
+  @@map("trade_in_photos")
 }
 
 model TradeInHistory {

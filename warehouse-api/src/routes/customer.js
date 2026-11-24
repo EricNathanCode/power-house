@@ -10,6 +10,7 @@ const check = require("../lib/check");
 const fmt = require("../lib/format");
 const orders = require("../services/orders");
 const tradeIns = require("../services/tradeIns");
+const { readImage, imageFrom } = require("../lib/images");
 
 const r = express.Router();
 // compared against when the email doesn't exist, so a wrong email takes as long as a wrong password
@@ -131,6 +132,21 @@ r.put("/orders/:id/cancel", requireCustomer, route(async (req, res) => {
 
 /* POST /api/trade-ins  { category, type, brand, model, condition, askingPrice, photos } */
 r.post("/trade-ins", requireCustomer, route(async (req, res) => res.status(201).json(await tradeIns.submit(req.session.customerId, req.body))));
+
+/* POST /api/trade-ins/:id/photos  body = one photo (JPG / PNG / WebP, up to 3 MB). Optional, up to 5 per item. */
+r.post("/trade-ins/:id/photos", requireCustomer, readImage, route(async (req, res) => {
+  res.status(201).json(await tradeIns.addPhoto(req.session.customerId, req.params.id, imageFrom(req)));
+}));
+
+/* GET /api/trade-ins/:id/photos/:photoId  -> the photo. Only the customer who sent it, or staff. */
+r.get("/trade-ins/:id/photos/:photoId", route(async (req, res) => {
+  const photoId = Number(req.params.photoId);
+  const p = Number.isInteger(photoId) ? await prisma.tradeInPhoto.findUnique({ where: { id: photoId }, include: { tradeIn: { select: { customerId: true } } } }) : null;
+  const allowed = p && p.tradeInId === req.params.id && (req.session.staff || req.session.customerId === p.tradeIn.customerId);
+  if (!allowed) throw new ApiError(404, "NOT_FOUND", "Photo not found."); // same answer for "not yours" and "doesn't exist"
+  res.set({ "Content-Type": p.mime, "Cache-Control": "private, max-age=86400", "X-Content-Type-Options": "nosniff" });
+  res.send(Buffer.from(p.data));
+}));
 
 /* GET /api/me/trade-ins  (newest first) */
 r.get("/me/trade-ins", requireCustomer, route(async (req, res) => {

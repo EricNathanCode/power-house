@@ -4,11 +4,10 @@
 const WIDTH = { CUST: 3 };
 
 async function nextId(tx, prefix) {
-  const rows = await tx.$queryRaw`
-    INSERT INTO id_counters (prefix, last) VALUES (${prefix}, 1)
-    ON CONFLICT (prefix) DO UPDATE SET last = id_counters.last + 1
-    RETURNING last`;
-  const n = Number(rows[0].last);
+  // Prisma turns this into one INSERT ... ON CONFLICT DO UPDATE (atomic), and it always uses the right schema
+  // (a hand-written SQL query would always hit the "public" schema, even when the tests run in "test")
+  const row = await tx.idCounter.upsert({ where: { prefix }, create: { prefix, last: 1 }, update: { last: { increment: 1 } } });
+  const n = row.last;
   return `${prefix}-${String(n).padStart(WIDTH[prefix] || 4, "0")}`;
 }
 

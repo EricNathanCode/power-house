@@ -22,7 +22,7 @@
           <div class="row between center wrapflex"><div><div class="small muted">Ship to · ${esc(o.address)}</div><b class="bracket" style="font-size:26px">${esc(o.id)}</b> ${statusBadge(o.status)}
           <div class="small muted" style="margin-top:4px">${date(o.createdAt)} · ${o.items.map((i) => `${esc(i.name)} × ${i.qty}`).join(", ")} · ${money(o.total)} · ${o.paymentMethod === "COD" ? "Cash on Delivery" : "GCash (SIMULATED)"}</div></div>
           <div style="text-align:center">${can ? `<button class="btn dg sm" data-cancel="${o.id}">${ico("x", 18)}Cancel order</button><div class="small muted" style="margin-top:6px">Allowed before Shipping</div>` : `<button class="btn sm" disabled>Cancel order</button><div class="small muted" style="margin-top:6px">Already shipped</div>`}</div></div>
-          <div style="margin-top:22px;overflow-x:auto">${steps(S, cur).replace(/width:96px/g, "width:120px")}</div>
+          <div class="steps-wrap">${steps(S, cur).replace(/width:96px/g, "width:120px")}</div>
           <div class="small muted" style="margin-top:12px">Last update: ${esc(last.status)} · ${when(last.at)}${last.by && last.by.startsWith("staff") ? " · by warehouse staff" : ""}</div>
         </article>`;
       }).join("") : `<div class="note" style="margin-top:20px">No open orders right now.</div>`}

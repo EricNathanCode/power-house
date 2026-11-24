@@ -49,7 +49,9 @@ const tradeIn = (t) => ({
   id: t.id, customerId: t.customerId, category: TRADE_CATEGORY_LABEL[t.category], type: t.type, brand: t.brand, model: t.model,
   condition: CONDITION_LABEL[t.condition], askingPrice: t.askingPrice, suggestedOffer: t.suggestedOffer, offer: t.offer,
   photos: t.photos, status: TRADE_LABEL[t.status], ...(t.note ? { note: t.note } : {}), ...(t.stockSku ? { stockSku: t.stockSku } : {}),
-  createdAt: phTime(t.createdAt), history: (t.history || []).map((h) => ({ status: h.status, at: phTime(h.at) }))
+  createdAt: phTime(t.createdAt), history: (t.history || []).map((h) => ({ status: h.status, at: phTime(h.at) })),
+  // the customer's photos of the item (paths under /api; only that customer and staff can open them)
+  photoUrls: (t.photoFiles || []).map((p) => `/trade-ins/${encodeURIComponent(t.id)}/photos/${p.id}`)
 });
 
 const purchaseOrder = (p) => ({
@@ -61,7 +63,7 @@ const movement = (m) => ({ id: m.id, sku: m.sku, change: m.change, reason: m.rea
 
 // how related rows are loaded with an order / trade-in
 const ORDER_INCLUDE = { items: { orderBy: { id: "asc" } }, history: { orderBy: [{ at: "asc" }, { id: "asc" }] } };
-const TRADE_INCLUDE = { history: { orderBy: [{ at: "asc" }, { id: "asc" }] } };
+const TRADE_INCLUDE = { history: { orderBy: [{ at: "asc" }, { id: "asc" }] }, photoFiles: { select: { id: true }, orderBy: { id: "asc" } } };
 
 module.exports = {
   ORDER_LABEL, ORDER_CODE, ORDER_STEPS, TRADE_LABEL, CONDITION_CODE, OFFER_PCT, TRADE_CATEGORY_CODE,

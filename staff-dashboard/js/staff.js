@@ -1,7 +1,7 @@
 /* Staff Portal: one dashboard with tabs (D12).
    Overview · Orders · Inventory · Low stock · Reorders · Trade-ins · Stock log  */
 (async () => {
-  const { $, $$, esc, money, ico, art, badge, statusBadge, donut, when, date, toast, dialog, modal, errorText, busy, theme } = PH.ui;
+  const { $, $$, esc, money, ico, art, badge, statusBadge, donut, when, date, toast, dialog, modal, errorText, busy, theme, shrinkPhoto } = PH.ui;
   if (!PH.session.staff()) { location.href = "login.html"; return; }
   const staff = PH.session.staff();
   const TABS = [["overview", "Overview"], ["orders", "Orders"], ["inventory", "Inventory"], ["low-stock", "Low stock"], ["reorders", "Reorders"], ["trade-ins", "Trade-ins"], ["stock-log", "Stock log"]];
@@ -80,7 +80,7 @@
         <div class="row stack-md" style="margin-top:22px;align-items:stretch">
           <section class="card" style="width:min(560px,100%)"><h3>Quick actions</h3><div class="row keep between wrapflex" style="gap:16px;margin-top:16px">
             ${[["#stock-log", "truck", "Receive delivery"], ["#inventory", "plus", "Restock"], ["#low-stock", "bolt", "Reorder"], ["#orders", "box", "Pack orders"]].map(([h2, i, t]) => `<a class="qa" href="${h2}" style="width:100px"><span class="circ lg">${ico(i, 26)}</span>${t}</a>`).join("")}
-            <button class="qa" id="reset" style="width:100px"><span class="circ lg">${ico("refresh", 26)}</span>Reset demo data</button></div></section>
+</div></section>
           <section class="card grow"><div class="row keep between center"><h3>Latest stock movements</h3><a class="small" href="#stock-log">Open stock log →</a></div>${moves.slice(0, 4).map((m) => moveRow(m, inv)).join("")}</section>
         </div>`;
     },
@@ -172,7 +172,7 @@
           if (t.status === "Rejected") act = `<span class="small muted">${esc(t.note || "Declined")}</span>`;
           if (t.status === "In stock") act = '<span class="small muted">Done</span>';
           const pct = PH.api.OFFER_PCT[t.condition];
-          return `<tr><td class="nowrap"><b>${esc(t.id)}</b><div class="small muted">${date(t.createdAt)}</div></td><td class="nowrap">${esc(t.customerId)}</td><td><b class="nowrap">${esc(t.model)}</b><div class="small muted nowrap">${esc(t.type)} · ${t.photos || 0} ${t.photos === 1 ? "photo" : "photos"}</div></td>
+          return `<tr><td class="nowrap"><b>${esc(t.id)}</b><div class="small muted">${date(t.createdAt)}</div></td><td class="nowrap">${esc(t.customerId)}</td><td><b class="nowrap">${esc(t.model)}</b><div class="small muted nowrap">${esc(t.type)}</div>${tradePhotos(t)}</td>
             <td>${esc(t.condition)}</td><td>${money(t.askingPrice)}</td><td>${t.suggestedOffer ? `${money(t.suggestedOffer)} <span class="small muted">(${Math.round(pct * 100)}%)</span>` : '<span class="small muted">price by hand</span>'}</td>
             <td>${offer}</td><td>${statusBadge(t.status, "trade")}</td><td><div class="acts">${act}</div></td></tr>`;
         }).join("") || `<tr><td colspan="9" class="muted" style="text-align:center;padding:28px">No trade-ins in “${esc(st.tradeFilter)}”.</td></tr>`}
@@ -221,19 +221,10 @@
   }
   const refresh = () => route();
 
-  /* Shrink a photo before upload: longest side 1200 px, WebP (JPEG if the browser can't make WebP).
-     Re-drawing it also drops the hidden camera data (EXIF), e.g. the GPS location of the phone. */
-  async function shrinkPhoto(file) {
-    const bmp = await createImageBitmap(file);
-    const k = Math.min(1, 1200 / Math.max(bmp.width, bmp.height));
-    const c = document.createElement("canvas"); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
-    c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height); bmp.close();
-    const make = (type) => new Promise((res) => c.toBlob(res, type, 0.85));
-    let out = await make("image/webp");
-    if (!out || out.type !== "image/webp") out = await make("image/jpeg");
-    if (!out) throw new Error("encode failed");
-    return out;
-  }
+  /* trade-in photos from the customer: small thumbnails, click to see them big */
+  const tradePhotos = (t) => t.photoSrc && t.photoSrc.length
+    ? `<div class="tthumbs">${t.photoSrc.map((u, i) => `<button type="button" class="tthumb" data-tphoto="${esc(t.id)}" data-i="${i}" aria-label="Open photo ${i + 1} of ${esc(t.model)}"><img src="${esc(u)}" alt="" loading="lazy"></button>`).join("")}</div>`
+    : `<div class="small muted nowrap">${t.photos ? `${t.photos} sample photos (no files)` : "No photos · check at the counter"}</div>`;
 
   /* ---------- modals ---------- */
   function productForm(p) {
@@ -377,11 +368,11 @@
     if (d.receive) run(() => PH.api.receiveDelivery(d.receive), `${d.receive} received, stock added`);
     if (d.offer) { const v = Number($(`#o-${d.offer}`).value); run(() => PH.api.sendOffer(d.offer, v), `Offer sent for ${d.offer}`); }
     if (d.reject) { if (await dialog({ title: `Decline ${d.reject}?`, body: "The customer is told we can't make an offer this time.", confirm: "Decline trade-in", cancel: "Keep reviewing", danger: true, icon: "alert" })) run(() => PH.api.rejectTradeIn(d.reject), `${d.reject} declined`); }
+    if (d.tphoto) { const t = (await PH.api.allTradeIns()).find((x) => x.id === d.tphoto); if (t) PH.ui.photoViewer(t.photoSrc, Number(d.i) || 0, `${t.id} · ${t.brand} ${t.model}`); return; }
     if (d.recv) run(() => PH.api.markTradeInReceived(d.recv), `${d.recv} received`);
     if (d.tostock) { const v = Number($(`#r-${d.tostock}`).value); run(async () => { const r = await PH.api.addTradeInToStock(d.tostock, v); toast(`Added to stock as ${r.sku}`); }); }
     if (d.reason) { st.logReason = d.reason; refresh(); }
     if (d.tfilter) { st.tradeFilter = d.tfilter; refresh(); }
-    if (t.id === "reset") { if (await dialog({ title: "Reset demo data?", body: "Orders, stock, trade-ins and purchase orders go back to the sample data.", confirm: "Reset demo data", cancel: "Keep my data", icon: "refresh" })) { try { await PH.api.resetDemo(); toast("Demo data reset"); refresh(); } catch (x) { toast(errorText(x), true); } } }
   });
   $("#app").addEventListener("input", (e) => {
     if (e.target.id === "oq") { st.orderQ = e.target.value; clearTimeout(e.target._t); e.target._t = setTimeout(async () => { await refresh(); const i = $("#oq"); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }, 250); }

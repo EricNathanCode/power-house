@@ -158,6 +158,36 @@
     return close;
   }
 
+  /* Shrink a photo before upload: longest side 1200 px, WebP (JPEG if the browser can't make WebP).
+     Re-drawing it also drops the hidden camera data (EXIF), e.g. the GPS location of the phone. */
+  async function shrinkPhoto(file) {
+    const bmp = await createImageBitmap(file);
+    const k = Math.min(1, 1200 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement("canvas"); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height); bmp.close();
+    const make = (type) => new Promise((res) => c.toBlob(res, type, 0.85));
+    let out = await make("image/webp");
+    if (!out || out.type !== "image/webp") out = await make("image/jpeg");
+    if (!out) throw new Error("encode failed");
+    return out;
+  }
+  /* big photo viewer with previous / next (arrow keys work too) */
+  function photoViewer(srcs, start = 0, title = "Photo") {
+    let i = start;
+    const close = modal(`<div class="row keep between center"><h3 id="pv-t"></h3><button type="button" class="btn xs icon" data-close aria-label="Close">${ico("x", 16)}</button></div>
+      <div class="pv-stage"><img id="pv-img" alt=""></div>
+      ${srcs.length > 1 ? `<div class="row keep between center" style="margin-top:12px"><button type="button" class="btn sm" id="pv-prev">Previous</button><span class="small muted mono" id="pv-n"></span><button type="button" class="btn sm" id="pv-next">Next</button></div>` : ""}`, (o) => {
+      o.querySelector(".modal").classList.add("pv");
+      const show = () => { const img = o.querySelector("#pv-img"); img.src = srcs[i]; img.alt = `${title}, photo ${i + 1} of ${srcs.length}`; o.querySelector("#pv-t").textContent = title; const n = o.querySelector("#pv-n"); if (n) n.textContent = `${i + 1} / ${srcs.length}`; };
+      const go = (d) => { i = (i + d + srcs.length) % srcs.length; show(); };
+      if (srcs.length > 1) { o.querySelector("#pv-prev").onclick = () => go(-1); o.querySelector("#pv-next").onclick = () => go(1); }
+      const key = (e) => { if (!document.body.contains(o)) { document.removeEventListener("keydown", key); return; } if (e.key === "ArrowLeft") go(-1); if (e.key === "ArrowRight") go(1); };
+      document.addEventListener("keydown", key);
+      show();
+    });
+    return close;
+  }
+
   /* type-to-search list (UX rule 3): attach to an input, give it a list of strings */
   function typeahead(input, getList, onPick, opts = {}) {
     const enterPicksFirst = opts.enterPicksFirst !== false;
@@ -334,11 +364,7 @@
     return me;
   }
   function storeFooter() {
-    document.body.insertAdjacentHTML("beforeend", `<footer class="foot"><b>Power House</b><span>${CRED}</span><span>COD · GCash (SIMULATED) · <a href="../staff-dashboard/login.html">Staff Portal</a> · <button type="button" data-reset>Reset demo data</button></span></footer>`);
-    $("[data-reset]").onclick = async () => {
-      if (!(await dialog({ title: "Reset demo data?", body: "Orders, stock, trade-ins and your cart go back to the sample data on the server. Logins stay.", confirm: "Reset demo data", cancel: "Keep my data", icon: "refresh" }))) return;
-      try { await PH.api.resetDemo(); location.reload(); } catch (e) { toast(errorText(e), true); }
-    };
+    document.body.insertAdjacentHTML("beforeend", `<footer class="foot"><b>Power House</b><span>COD · GCash (SIMULATED) · <a href="../staff-dashboard/login.html">Staff Portal</a></span></footer>`);
   }
 
   /* the API server can't be reached: say so once, clearly, instead of half-empty pages */
@@ -438,6 +464,6 @@
     PH.cart.add(sku, 1); holdResult(b, true); toast(`Added ${p.name} to your cart`);
   });
 
-  PH.ui = { holdResult, digitBoxes, logo, needLogin, hudHead, $, $$, esc, money, date, time, when, qs, ico, art, badge, stockBadge, statusBadge, cancelledBy, steps, vsteps, donut, toast, dialog, modal, typeahead,
+  PH.ui = { shrinkPhoto, photoViewer, holdResult, digitBoxes, logo, needLogin, hudHead, $, $$, esc, money, date, time, when, qs, ico, art, badge, stockBadge, statusBadge, cancelledBy, steps, vsteps, donut, toast, dialog, modal, typeahead,
     maskPhone, maskDigits, maskMoney, moneyValue, theme, storeHeader, storeFooter, requireLogin, errorText, busy, productCard, productRow, CRED };
 })();

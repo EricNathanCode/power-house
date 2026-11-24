@@ -10,6 +10,7 @@ const check = require("../lib/check");
 const fmt = require("../lib/format");
 const orders = require("../services/orders");
 const tradeIns = require("../services/tradeIns");
+const { readImage, imageFrom } = require("../lib/images");
 
 const r = express.Router();
 const TX = { timeout: 20000, maxWait: 10000 };
@@ -117,16 +118,8 @@ r.delete("/products/:sku", route(async (req, res) => {
 
 /* PUT /api/staff/products/:sku/image  body = the image file itself (JPEG, PNG or WebP, up to 3 MB).
    The dashboard shrinks photos before sending, so they are usually under 200 KB. */
-const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const looksLike = (b, mime) =>
-  (mime === "image/jpeg" && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) ||
-  (mime === "image/png" && b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) ||
-  (mime === "image/webp" && b.subarray(0, 4).toString("latin1") === "RIFF" && b.subarray(8, 12).toString("latin1") === "WEBP");
-r.put("/products/:sku/image", express.raw({ type: IMAGE_TYPES, limit: "3mb" }), route(async (req, res) => {
-  const mime = String(req.headers["content-type"] || "").split(";")[0].trim().toLowerCase();
-  const data = req.body;
-  if (!IMAGE_TYPES.includes(mime) || !Buffer.isBuffer(data) || data.length < 100) throw new ApiError(400, "BAD_IMAGE", "Upload a JPG, PNG or WebP photo.");
-  if (!looksLike(data, mime)) throw new ApiError(400, "BAD_IMAGE", "That file is not a real JPG, PNG or WebP image.");
+r.put("/products/:sku/image", readImage, route(async (req, res) => {
+  const { mime, data } = imageFrom(req);
   const p = await prisma.product.findUnique({ where: { sku: req.params.sku } });
   if (!p) throw notFound(`Product ${req.params.sku} not found`);
   const at = new Date();

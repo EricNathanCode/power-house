@@ -62,7 +62,6 @@ Install PostgreSQL 18, create a database `powerhouse`, change both lines in `.en
 | 🔒 | PUT | `/api/staff/settings/supplier` | Turn the SIMULATED supplier on/off (demo) |
 | 🔒 | GET | `/api/staff/stock-movements` | Stock log |
 | 🔒 | GET / PUT | `/api/staff/trade-ins` · `.../:id/offer` · `/reject` · `/receive` · `/to-stock` | Review trade-ins |
-| 🔓* | POST | `/api/demo/reset` | Sample data back (*only when `ALLOW_DEMO_RESET=true`) |
 
 ## Security in the code
 - Passwords: bcrypt hashes only; logins in an httpOnly, SameSite cookie; new session id after login

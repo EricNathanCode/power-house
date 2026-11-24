@@ -8,7 +8,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const { prisma } = require("./db");
-const { ApiError, route, errorHandler } = require("./lib/errors");
+const { route, errorHandler } = require("./lib/errors");
 
 function createApp() {
   const secret = process.env.SESSION_SECRET || "";
@@ -54,14 +54,6 @@ function createApp() {
   app.use("/api", require("./routes/public"));
   app.use("/api", require("./routes/customer"));
   app.use("/api/staff", require("./routes/staff"));
-
-  /* POST /api/demo/reset  -> sample data back (only when ALLOW_DEMO_RESET=true in .env; never on a real store) */
-  app.post("/api/demo/reset", route(async (req, res) => {
-    if (process.env.ALLOW_DEMO_RESET !== "true") throw new ApiError(403, "RESET_OFF", "Demo reset is turned off on this server.");
-    const { seed } = require("../prisma/seed");
-    await seed(prisma);
-    res.json({ ok: true });
-  }));
 
   app.use("/api", (req, res) => res.status(404).json({ error: { code: "NO_ENDPOINT", message: `No endpoint ${req.method} ${req.originalUrl}` } }));
 

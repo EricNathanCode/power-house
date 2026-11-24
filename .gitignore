@@ -15,3 +15,6 @@ Thumbs.db
 
 # design working files (screenshots, direction sheet)
 .taste-skill/
+
+# database backups (customer data and password hashes: never commit)
+backups/

@@ -7,12 +7,13 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "node --test --test-concurrency=1 \"tests/*.test.js\"",
+    "test": "node scripts/test-safe.js",
     "db:check": "node scripts/db-check.js",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "node prisma/seed.js",
-    "db:reset": "prisma migrate reset --force",
+    "db:backup": "node scripts/db-backup.js",
+    "db:restore": "node scripts/db-restore.js",
     "db:studio": "prisma studio",
     "db:verify": "node scripts/db-verify.js"
   },

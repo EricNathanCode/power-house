@@ -86,6 +86,7 @@ const API = (() => {
   /* uploaded photo: the server sends a path under /api; pages draw p.art, so a photo simply replaces the drawing name
      with the full photo address (ui.js art() shows an <img> for it) */
   const withPhoto = (p) => { if (p && p.image) { p.drawing = p.art; p.photo = API + p.image; p.art = p.photo; } return p; };
+  const withTradePhotos = (list) => { list.forEach((t) => { t.photoSrc = (t.photoUrls || []).map((u) => API + u); }); return list; };
   const withPhotos = (list) => (Array.isArray(list) ? list.forEach(withPhoto) : withPhoto(list), list);
 
   /* ---------- product list kept in memory, so the cart can be priced instantly ---------- */
@@ -224,19 +225,15 @@ const API = (() => {
       return { retail: ref.price, pct: OFFER_PCT[condition], offer: Math.round(ref.price * OFFER_PCT[condition]), refName: ref.name };
     },
     async submitTradeIn(t) { return request("POST", "/trade-ins", t); },
-    async myTradeIns() { return request("GET", "/me/trade-ins"); },
+    async myTradeIns() { return withTradePhotos(await request("GET", "/me/trade-ins")); },
+    /* optional photo of the item (a Blob); only this customer and staff can see it */
+    async uploadTradeInPhoto(id, photo) { return request("POST", "/trade-ins/" + enc(id) + "/photos", photo); },
     async answerOffer(id, accept) { return request("PUT", "/trade-ins/" + enc(id) + "/answer", { accept: !!accept }); },
-    async allTradeIns() { return request("GET", "/staff/trade-ins"); },
+    async allTradeIns() { return withTradePhotos(await request("GET", "/staff/trade-ins")); },
     async sendOffer(id, amount) { return request("PUT", "/staff/trade-ins/" + enc(id) + "/offer", { amount }); },
     async rejectTradeIn(id) { return request("PUT", "/staff/trade-ins/" + enc(id) + "/reject", {}); },
     async markTradeInReceived(id) { return request("PUT", "/staff/trade-ins/" + enc(id) + "/receive"); },
     async addTradeInToStock(id, price) { return request("PUT", "/staff/trade-ins/" + enc(id) + "/to-stock", { price }); },
 
-    /* demo helper: sample data back on the server (only if the server allows it) + empty carts */
-    async resetDemo() {
-      await request("POST", "/demo/reset");
-      try { Object.keys(localStorage).filter((k) => k.startsWith("ph_cart")).forEach((k) => localStorage.removeItem(k)); } catch (e) { /* ignore */ }
-      await loadCatalog();
-    }
   };
 })();

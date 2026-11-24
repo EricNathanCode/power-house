@@ -110,6 +110,18 @@ module.exports = { seed };
 // run from the command line: npm run db:seed
 if (require.main === module) {
   const prisma = new PrismaClient();
+  // safety: never wipe real products by accident. Only an empty database (or the test schema) gets the sample data.
+  const isTestSchema = /[?&]schema=test(&|$)/.test(process.env.DATABASE_URL || "");
+  prisma.product.count().then((n) => {
+    if (n > 0 && !isTestSchema && !process.argv.includes("--wipe-real-data")) {
+      console.error(`Stopped: the database already has ${n} products. Loading the sample data would DELETE them (names, prices, photos, specs, orders).`);
+      console.error("Make a backup first (npm run db:backup). If you really want to wipe everything: node prisma/seed.js --wipe-real-data");
+      process.exit(1);
+    }
+    run(prisma);
+  });
+}
+function run(prisma) {
   const t0 = Date.now();
   seed(prisma)
     .then(async (version) => {

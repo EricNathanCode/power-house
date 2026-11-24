@@ -932,8 +932,8 @@ td .badge.sb { height: auto; min-height: 26px; padding-top: 4px; padding-bottom:
   /* category tiles: the photo moves closer when you point at it */
   .tile .cat-photo { transition: background-size .5s cubic-bezier(.22, 1, .36, 1), transform .5s cubic-bezier(.22, 1, .36, 1); }
   .tile:hover .cat-photo { transform: scale(1.04); } .tile { overflow: hidden; }
-  /* order tracker and step bars: the current step breathes once so the eye lands on it */
-  .dot.cur { animation: pop .35s cubic-bezier(.22, 1, .36, 1) both, step-ring 1.4s ease-out .4s 1; }
+  /* order tracker and step bars: the current step beats like a heart (two quick beats, then a rest) so the eye lands on it */
+  .dot.cur { animation: pop .35s cubic-bezier(.22, 1, .36, 1) both, step-beat 1.6s ease-out .4s infinite; }
   /* low-stock badges nudge once when they come into view */
   .rv.in .badge.low { animation: nudge .5s cubic-bezier(.22, 1, .36, 1) .3s 1; }
   /* toasts slide in from the right edge like a label */
@@ -1044,3 +1044,30 @@ td .badge.sb { height: auto; min-height: 26px; padding-top: 4px; padding-bottom:
 textarea { resize: vertical; min-height: 96px; line-height: 1.5; font: inherit; }
 .pdesc { margin: 8px 0 0; white-space: pre-line; line-height: 1.6; }
 @media (max-width: 520px) { .spec-row { grid-template-columns: minmax(0, 1fr) auto auto; } .spec-row .spec-v { grid-column: 1 / -1; grid-row: 2; } }
+
+/* step tracker inside a sideways-scrolling box (My Orders, My Trade-ins): room around it so the beat's glow isn't cut off */
+.steps-wrap { overflow-x: auto; margin: 8px -14px 0; padding: 14px; }
+@keyframes step-beat {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 var(--beat, rgba(255, 229, 0, .6)); }
+  12% { transform: scale(1.14); }
+  24% { transform: scale(1); }
+  36% { transform: scale(1.09); }
+  60% { transform: scale(1); box-shadow: 0 0 0 11px rgba(255, 229, 0, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 11px rgba(255, 229, 0, 0); }
+}
+:root:not([data-theme="dark"]) .dot.cur { --beat: rgba(17, 17, 17, .35); } /* light theme: a dark glow shows better than yellow on white */
+
+/* trade-in photos (2026-11-24): thumbnails for customers and staff, and the big viewer */
+.tthumbs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.tthumb { position: relative; width: 44px; height: 44px; padding: 0; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: var(--soft); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform .15s, border-color .15s; }
+.tthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+button.tthumb:hover, button.tthumb:focus-visible { transform: translateY(-2px); border-color: #FFE500; }
+.tthumbs.big { margin-top: 12px; gap: 10px; }
+.tthumbs.big .tthumb { width: 96px; height: 96px; cursor: default; }
+.tthumb.busy { animation: pulse-soft 1s ease-in-out infinite alternate; }
+.tthumb .rm { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; border-radius: 4px; border: 0; background: rgba(17, 17, 17, .8); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.tthumb .rm:hover { background: #B4173A; }
+.modal.pv { width: min(860px, 96vw); }
+.pv-stage { margin-top: 14px; background: var(--soft); border-radius: 4px; display: flex; align-items: center; justify-content: center; height: min(62vh, 560px); }
+.pv-stage img { max-width: 100%; max-height: 100%; object-fit: contain; }
+@keyframes pulse-soft { from { opacity: .55; } to { opacity: 1; } }
